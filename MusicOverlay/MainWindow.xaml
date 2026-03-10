@@ -133,13 +133,46 @@
         <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="12">
           <StackPanel>
 
-            <TextBlock Text="预设主题" FontWeight="SemiBold" Margin="0,0,0,6"/>
-            <ComboBox x:Name="PresetSelector" Width="200" HorizontalAlignment="Left"
-                      Margin="0,0,0,16" SelectionChanged="PresetSelector_Changed">
-              <ComboBoxItem Content="vinyl (黑胶旋转)"  Tag="vinyl"/>
-              <ComboBoxItem Content="minimal (简约)"   Tag="minimal"/>
-              <ComboBoxItem Content="card (卡片)"      Tag="card"/>
-            </ComboBox>
+            <!-- Active theme selector -->
+            <TextBlock Text="当前使用的主题" FontWeight="SemiBold" Margin="0,0,0,6"/>
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+              <ComboBox x:Name="ThemeSelector" Width="260" SelectionChanged="ThemeSelector_SelectionChanged"/>
+              <Button Content="应用" Margin="8,0,0,0" Click="ApplyTheme_Click"/>
+            </StackPanel>
+
+            <!-- Theme list -->
+            <TextBlock Text="已配置的主题" FontWeight="SemiBold" Margin="0,0,0,6"/>
+            <Border Background="{StaticResource BgBrush}" CornerRadius="6"
+                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="8">
+              <StackPanel>
+                <ListBox x:Name="ThemeList" Background="Transparent" BorderThickness="0"
+                         SelectionChanged="ThemeList_SelectionChanged" MinHeight="80"/>
+                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                  <Button Content="添加黑胶主题" Click="AddVinylTheme_Click" Margin="0,0,8,0"/>
+                  <Button Content="添加自定义主题" Click="AddCustomTheme_Click" Margin="0,0,8,0"/>
+                  <Button Content="删除选中主题" Background="#c42b1c" Click="DeleteTheme_Click"/>
+                </StackPanel>
+              </StackPanel>
+            </Border>
+
+            <!-- Theme editor -->
+            <Border x:Name="ThemeEditor" Visibility="Collapsed"
+                    Background="{StaticResource BgBrush}" CornerRadius="6"
+                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
+                    Padding="12" Margin="0,12,0,0">
+              <StackPanel>
+                <TextBlock Text="编辑主题" FontWeight="SemiBold" Margin="0,0,0,10"/>
+
+                <Label Content="主题名称"/>
+                <TextBox x:Name="EditorThemeName" Margin="0,2,0,8"/>
+
+                <TextBlock Text="预设风格（选择后可继续自定义）" FontWeight="SemiBold" Margin="0,4,0,6"/>
+                <ComboBox x:Name="PresetSelector" Width="200" HorizontalAlignment="Left"
+                          Margin="0,0,0,16" SelectionChanged="PresetSelector_Changed">
+                  <ComboBoxItem Content="vinyl (黑胶旋转)"  Tag="vinyl"/>
+                  <ComboBoxItem Content="minimal (简约)"   Tag="minimal"/>
+                  <ComboBoxItem Content="card (卡片)"      Tag="card"/>
+                </ComboBox>
 
             <!-- Cover settings -->
             <TextBlock Text="封面" FontWeight="SemiBold" Margin="0,0,0,6"/>
@@ -263,6 +296,11 @@
               </Grid>
             </Border>
 
+                <Button Content="保存此主题" HorizontalAlignment="Left" Margin="0,12,0,0"
+                        Click="SaveThemeEditor_Click"/>
+              </StackPanel>
+            </Border>
+
           </StackPanel>
         </ScrollViewer>
       </TabItem>
@@ -270,6 +308,15 @@
       <!-- ── Tab 3: 状态 / 预览 ── -->
       <TabItem Header="状态">
         <StackPanel Margin="12">
+
+          <!-- Frontend template selector -->
+          <TextBlock Text="前端模板" FontWeight="SemiBold" Margin="0,0,0,6"/>
+          <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+            <ComboBox x:Name="FrontendSelector" Width="200" SelectionChanged="FrontendSelector_Changed"/>
+            <TextBlock Text="（切换后需刷新浏览器源）" Foreground="{StaticResource SubFgBrush}"
+                       VerticalAlignment="Center" Margin="8,0,0,0" FontSize="11"/>
+          </StackPanel>
+
           <TextBlock Text="当前播放" FontWeight="SemiBold" Margin="0,0,0,8"/>
           <Border Background="{StaticResource BgBrush}" CornerRadius="6"
                   BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="12" Margin="0,0,0,12">
@@ -311,8 +358,7 @@
 
     <!-- Footer buttons -->
     <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
-      <Button Content="保存外观设置" Click="SaveTheme_Click" Margin="0,0,8,0"/>
-      <Button Content="最小化到托盘" Background="#3a3a3a" Click="HideToTray_Click"/>
+      <Button Content="最小化到托盘" Background="#888888" Click="HideToTray_Click"/>
     </StackPanel>
 
   </Grid>

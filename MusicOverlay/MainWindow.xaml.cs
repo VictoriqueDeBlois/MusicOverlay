@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using System.Windows.Input;
 using MusicOverlay.Config;
@@ -11,6 +12,7 @@ public partial class MainWindow : Window
 {
     private ConfigManager Config => App.Config;
     private string? _editingSourceId;
+    private string? _editingThemeId;
 
     public MainWindow()
     {
@@ -26,7 +28,8 @@ public partial class MainWindow : Window
 
         SetupUrls(port);
         LoadSourceList();
-        LoadThemeEditor();
+        LoadThemeList();
+        LoadFrontendList();
         RefreshStatus(App.Manager.CurrentInfo);
     }
 
@@ -65,6 +68,49 @@ public partial class MainWindow : Window
     {
         if (sender is System.Windows.Controls.TextBlock tb && tb.Tag is string url)
             Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+    }
+
+    private void LoadFrontendList()
+    {
+        FrontendSelector.Items.Clear();
+
+        var templatesDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "web", "templates");
+        if (Directory.Exists(templatesDir))
+        {
+            foreach (var dir in Directory.GetDirectories(templatesDir))
+            {
+                var name = Path.GetFileName(dir);
+                FrontendSelector.Items.Add(new System.Windows.Controls.ComboBoxItem
+                {
+                    Content = name, Tag = name
+                });
+            }
+        }
+
+        // Select active
+        foreach (System.Windows.Controls.ComboBoxItem item in FrontendSelector.Items)
+        {
+            if (item.Tag as string == Config.App.ActiveFrontend)
+            {
+                FrontendSelector.SelectedItem = item;
+                break;
+            }
+        }
+
+        // Fallback to first item if active not found
+        if (FrontendSelector.SelectedItem == null && FrontendSelector.Items.Count > 0)
+            FrontendSelector.SelectedIndex = 0;
+    }
+
+    private void FrontendSelector_Changed(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (FrontendSelector.SelectedItem is System.Windows.Controls.ComboBoxItem item &&
+            item.Tag is string templateName)
+        {
+            Config.App.ActiveFrontend = templateName;
+            Config.SaveSources();
+            App.Server.SetTemplate(templateName);
+        }
     }
 
     // ── Sources tab ──────────────────────────────────────────────────────────
@@ -173,7 +219,7 @@ public partial class MainWindow : Window
         Config.SetSourceConfig(_editingSourceId, cfg);
         Config.SaveSources();
         LoadSourceList();
-        MessageBox.Show("已保存。如果此源当前正在使用，请重新应用以生效。", "保存成功",
+        System.Windows.MessageBox.Show("已保存。如果此源当前正在使用，请重新应用以生效。", "保存成功",
                         MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
@@ -200,7 +246,7 @@ public partial class MainWindow : Window
         if (_editingSourceId == null) return;
         if (_editingSourceId == Config.App.ActiveSource)
         {
-            MessageBox.Show("无法删除当前正在使用的源，请先切换到其他源。", "提示",
+            System.Windows.MessageBox.Show("无法删除当前正在使用的源，请先切换到其他源。", "提示",
                             MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
@@ -220,15 +266,54 @@ public partial class MainWindow : Window
         {
             await App.Manager.SwitchSourceAsync(id);
             LoadSourceList();
-            MessageBox.Show($"已切换到：{item.Content}", "已应用", MessageBoxButton.OK, MessageBoxImage.Information);
+            System.Windows.MessageBox.Show($"已切换到：{item.Content}", "已应用", MessageBoxButton.OK, MessageBoxImage.Information);
         }
     }
 
     // ── Theme tab ────────────────────────────────────────────────────────────
 
-    private void LoadThemeEditor()
+    private void LoadThemeList()
     {
-        var t = Config.Theme;
+        ThemeList.Items.Clear();
+        ThemeSelector.Items.Clear();
+
+        foreach (var kv in Config.App.Themes)
+        {
+            var cfg = Config.GetThemeConfig(kv.Key);
+            var label = $"{cfg.DisplayName}  [{kv.Key}]";
+            ThemeList.Items.Add(new System.Windows.Controls.ListBoxItem
+            {
+                Content = label, Tag = kv.Key
+            });
+            ThemeSelector.Items.Add(new System.Windows.Controls.ComboBoxItem
+            {
+                Content = cfg.DisplayName, Tag = kv.Key
+            });
+        }
+
+        // Select active
+        foreach (System.Windows.Controls.ComboBoxItem item in ThemeSelector.Items)
+        {
+            if (item.Tag as string == Config.App.ActiveTheme)
+            {
+                ThemeSelector.SelectedItem = item;
+                break;
+            }
+        }
+    }
+
+    private void ThemeList_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (ThemeList.SelectedItem is System.Windows.Controls.ListBoxItem li && li.Tag is string id)
+            OpenThemeEditor(id);
+    }
+
+    private void OpenThemeEditor(string themeId)
+    {
+        _editingThemeId = themeId;
+        var t = Config.GetThemeConfig(themeId);
+
+        EditorThemeName.Text = t.DisplayName;
 
         foreach (System.Windows.Controls.ComboBoxItem item in PresetSelector.Items)
             if (item.Tag as string == t.Preset) { PresetSelector.SelectedItem = item; break; }
@@ -257,17 +342,120 @@ public partial class MainWindow : Window
         foreach (System.Windows.Controls.ComboBoxItem item in BgType.Items)
             if (item.Tag as string == t.Background.Type) { BgType.SelectedItem = item; break; }
         BgColor.Text = t.Background.Color;
+
+        ThemeEditor.Visibility = Visibility.Visible;
     }
 
     private void PresetSelector_Changed(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {
         if (PresetSelector.SelectedItem is System.Windows.Controls.ComboBoxItem item)
-            Config.Theme.Preset = item.Tag as string ?? "vinyl";
+        {
+            var preset = item.Tag as string ?? "vinyl";
+            // Apply preset defaults to form controls
+            ApplyPresetDefaults(preset);
+        }
     }
 
-    private void SaveTheme_Click(object sender, RoutedEventArgs e)
+    private void ApplyPresetDefaults(string preset)
     {
-        var t = Config.Theme;
+        switch (preset)
+        {
+            case "vinyl":
+                // Vinyl preset: 黑胶旋转效果
+                CoverSize.Text = "200";
+                CoverRotationSpeed.Text = "8";
+                SelectComboItem(CoverShape, "circle");
+                SelectComboItem(CoverAnimation, "rotate");
+
+                TitleFont.Text = "Microsoft YaHei";
+                TitleSize.Text = "28";
+                TitleColor.Text = "#ffffff";
+                TitleShadow.IsChecked = true;
+                TitleMarquee.IsChecked = true;
+                TitleBold.IsChecked = false;
+
+                ArtistFont.Text = "Microsoft YaHei";
+                ArtistSize.Text = "18";
+                ArtistColor.Text = "#aaaaaa";
+                ArtistShadow.IsChecked = true;
+                ArtistMarquee.IsChecked = false;
+                ArtistBold.IsChecked = false;
+
+                SelectComboItem(BgType, "transparent");
+                BgColor.Text = "#00000080";
+                break;
+
+            case "minimal":
+                // Minimal preset: 简约风格，无动画
+                CoverSize.Text = "180";
+                CoverRotationSpeed.Text = "0";
+                SelectComboItem(CoverShape, "rounded");
+                SelectComboItem(CoverAnimation, "none");
+
+                TitleFont.Text = "Microsoft YaHei";
+                TitleSize.Text = "24";
+                TitleColor.Text = "#ffffff";
+                TitleShadow.IsChecked = false;
+                TitleMarquee.IsChecked = true;
+                TitleBold.IsChecked = false;
+
+                ArtistFont.Text = "Microsoft YaHei";
+                ArtistSize.Text = "16";
+                ArtistColor.Text = "#cccccc";
+                ArtistShadow.IsChecked = false;
+                ArtistMarquee.IsChecked = false;
+                ArtistBold.IsChecked = false;
+
+                SelectComboItem(BgType, "transparent");
+                BgColor.Text = "#00000000";
+                break;
+
+            case "card":
+                // Card preset: 卡片风格，带背景
+                CoverSize.Text = "160";
+                CoverRotationSpeed.Text = "0";
+                SelectComboItem(CoverShape, "rounded");
+                SelectComboItem(CoverAnimation, "pulse");
+
+                TitleFont.Text = "Microsoft YaHei";
+                TitleSize.Text = "26";
+                TitleColor.Text = "#ffffff";
+                TitleShadow.IsChecked = true;
+                TitleMarquee.IsChecked = true;
+                TitleBold.IsChecked = true;
+
+                ArtistFont.Text = "Microsoft YaHei";
+                ArtistSize.Text = "18";
+                ArtistColor.Text = "#e0e0e0";
+                ArtistShadow.IsChecked = true;
+                ArtistMarquee.IsChecked = false;
+                ArtistBold.IsChecked = false;
+
+                SelectComboItem(BgType, "blur_cover");
+                BgColor.Text = "#00000088";
+                break;
+        }
+    }
+
+    private void SelectComboItem(System.Windows.Controls.ComboBox combo, string tag)
+    {
+        foreach (System.Windows.Controls.ComboBoxItem item in combo.Items)
+        {
+            if (item.Tag as string == tag)
+            {
+                combo.SelectedItem = item;
+                break;
+            }
+        }
+    }
+
+    private void SaveThemeEditor_Click(object sender, RoutedEventArgs e)
+    {
+        if (_editingThemeId == null) return;
+
+        var t = Config.GetThemeConfig(_editingThemeId);
+
+        t.DisplayName = EditorThemeName.Text.Trim();
 
         if (PresetSelector.SelectedItem is System.Windows.Controls.ComboBoxItem presetItem)
             t.Preset = presetItem.Tag as string ?? "vinyl";
@@ -297,14 +485,85 @@ public partial class MainWindow : Window
             t.Background.Type = bgItem.Tag as string ?? "transparent";
         t.Background.Color = BgColor.Text.Trim();
 
-        Config.SaveTheme();
+        Config.SetThemeConfig(_editingThemeId, t);
+        Config.SaveSources();
+        LoadThemeList();
 
-        // Push updated theme to connected overlay pages immediately
-        var themeJson = Newtonsoft.Json.JsonConvert.SerializeObject(t);
-        App.Server.UpdateMedia(App.Manager.CurrentInfo, themeJson);
+        // If this is the active theme, push to overlays immediately
+        if (_editingThemeId == Config.App.ActiveTheme)
+        {
+            var themeJson = Newtonsoft.Json.JsonConvert.SerializeObject(t);
+            App.Server.UpdateMedia(App.Manager.CurrentInfo, themeJson);
+        }
 
-        MessageBox.Show("外观设置已保存并推送到 overlay。", "保存成功",
+        System.Windows.MessageBox.Show("主题已保存。如果要应用到 overlay，请在上方选择并点击'应用'。", "保存成功",
                         MessageBoxButton.OK, MessageBoxImage.Information);
+    }
+
+    private void AddVinylTheme_Click(object sender, RoutedEventArgs e)
+    {
+        var id = $"vinyl_{Guid.NewGuid().ToString()[..6]}";
+        Config.SetThemeConfig(id, new ThemeConfig
+        {
+            DisplayName = "新黑胶主题",
+            Preset = "vinyl",
+            Cover = new CoverTheme { Size = 200, Shape = "circle", Animation = "rotate", RotationSpeed = 8 },
+            Title = new TextTheme  { Font = "Microsoft YaHei", Size = 28, Color = "#ffffff", Shadow = true, Marquee = true },
+            Artist = new TextTheme { Font = "Microsoft YaHei", Size = 18, Color = "#aaaaaa", Shadow = true, Marquee = false },
+            Background = new BackgroundTheme { Type = "transparent" }
+        });
+        Config.SaveSources();
+        LoadThemeList();
+        OpenThemeEditor(id);
+    }
+
+    private void AddCustomTheme_Click(object sender, RoutedEventArgs e)
+    {
+        var id = $"custom_{Guid.NewGuid().ToString()[..6]}";
+        Config.SetThemeConfig(id, new ThemeConfig
+        {
+            DisplayName = "自定义主题",
+            Preset = "vinyl"
+        });
+        Config.SaveSources();
+        LoadThemeList();
+        OpenThemeEditor(id);
+    }
+
+    private void DeleteTheme_Click(object sender, RoutedEventArgs e)
+    {
+        if (_editingThemeId == null) return;
+        if (_editingThemeId == Config.App.ActiveTheme)
+        {
+            System.Windows.MessageBox.Show("无法删除当前正在使用的主题，请先切换到其他主题。", "提示",
+                            MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+        Config.App.Themes.Remove(_editingThemeId);
+        Config.SaveSources();
+        _editingThemeId = null;
+        ThemeEditor.Visibility = Visibility.Collapsed;
+        LoadThemeList();
+    }
+
+    private void ThemeSelector_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e) { }
+
+    private async void ApplyTheme_Click(object sender, RoutedEventArgs e)
+    {
+        if (ThemeSelector.SelectedItem is System.Windows.Controls.ComboBoxItem item &&
+            item.Tag is string id)
+        {
+            Config.App.ActiveTheme = id;
+            Config.SaveSources();
+
+            // Push updated theme to connected overlay pages immediately
+            var theme = Config.GetThemeConfig(id);
+            var themeJson = Newtonsoft.Json.JsonConvert.SerializeObject(theme);
+            App.Server.UpdateMedia(App.Manager.CurrentInfo, themeJson);
+
+            LoadThemeList();
+            System.Windows.MessageBox.Show($"已应用主题：{item.Content}", "已应用", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
     }
 
     // ── Window behaviour ─────────────────────────────────────────────────────

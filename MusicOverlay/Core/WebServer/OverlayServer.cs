@@ -18,6 +18,7 @@ namespace MusicOverlay.Core.WebServer;
 ///   GET /api/now      → JSON of current MediaInfo
 ///   GET /api/theme    → JSON of current ThemeConfig
 ///   GET /static/*     → static files from web/ (js, css, images)
+///   GET /*.js|css|png|jpg → root-level static files from web/
 ///
 /// WebSocket:
 ///   ws://localhost:{port}/ws  → push MediaInfo JSON on every change
@@ -25,7 +26,8 @@ namespace MusicOverlay.Core.WebServer;
 public class OverlayServer : IDisposable
 {
     private readonly int _port;
-    private readonly string _webRoot;
+    private readonly string _webRootBase;
+    private string _currentTemplate;
     private HttpListener? _listener;
     private CancellationTokenSource? _cts;
 
@@ -37,11 +39,20 @@ public class OverlayServer : IDisposable
 
     public bool IsRunning { get; private set; }
 
-    public OverlayServer(int port, string webRoot)
+    public OverlayServer(int port, string webRootBase, string initialTemplate = "default")
     {
         _port = port;
-        _webRoot = webRoot;
+        _webRootBase = webRootBase;
+        _currentTemplate = initialTemplate;
     }
+
+    /// <summary>Switch to a different frontend template (e.g. "default", "custom1").</summary>
+    public void SetTemplate(string templateName)
+    {
+        _currentTemplate = templateName;
+    }
+
+    private string GetTemplateRoot() => Path.Combine(_webRootBase, "templates", _currentTemplate);
 
     public void Start()
     {
@@ -129,16 +140,39 @@ public class OverlayServer : IDisposable
 
             if (htmlFile != null)
             {
-                await ServeFileAsync(resp, Path.Combine(_webRoot, htmlFile));
+                await ServeFileAsync(resp, Path.Combine(GetTemplateRoot(), htmlFile));
                 return;
             }
 
-            // Static files  (e.g. /themes/vinyl.css → web/themes/vinyl.css)
-            if (path.StartsWith("/static/") || path.StartsWith("/themes/") || path.StartsWith("/custom/"))
+            // Static files from template directory (e.g. /custom/user.css → templates/{name}/custom/user.css)
+            if (path.StartsWith("/static/") || path.StartsWith("/custom/"))
             {
-                var filePath = Path.Combine(_webRoot, path.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+                var filePath = Path.Combine(GetTemplateRoot(), path.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
                 await ServeFileAsync(resp, filePath);
                 return;
+            }
+
+            // Shared themes directory (e.g. /themes/vinyl.css → web/themes/vinyl.css)
+            if (path.StartsWith("/themes/"))
+            {
+                var filePath = Path.Combine(_webRootBase, path.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+                await ServeFileAsync(resp, filePath);
+                return;
+            }
+
+            // Root-level static files (e.g. /overlay.js → templates/{name}/overlay.js)
+            if (path.Length > 1 && !path.Contains(".."))
+            {
+                var ext = Path.GetExtension(path).ToLowerInvariant();
+                if (ext == ".js" || ext == ".css" || ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".ico")
+                {
+                    var filePath = Path.Combine(GetTemplateRoot(), path.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+                    if (File.Exists(filePath))
+                    {
+                        await ServeFileAsync(resp, filePath);
+                        return;
+                    }
+                }
             }
 
             resp.StatusCode = 404;

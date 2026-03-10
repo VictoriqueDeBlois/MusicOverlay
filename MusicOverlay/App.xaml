@@ -4,13 +4,13 @@
              ShutdownMode="OnExplicitShutdown">
   <Application.Resources>
     <ResourceDictionary>
-      <!-- Dark theme base -->
-      <SolidColorBrush x:Key="BgBrush"       Color="#1e1e1e"/>
-      <SolidColorBrush x:Key="PanelBrush"    Color="#2a2a2a"/>
+      <!-- Light theme base -->
+      <SolidColorBrush x:Key="BgBrush"       Color="#ffffff"/>
+      <SolidColorBrush x:Key="PanelBrush"    Color="#f5f5f5"/>
       <SolidColorBrush x:Key="AccentBrush"   Color="#0078d4"/>
-      <SolidColorBrush x:Key="FgBrush"       Color="#e0e0e0"/>
-      <SolidColorBrush x:Key="SubFgBrush"    Color="#888888"/>
-      <SolidColorBrush x:Key="BorderBrush"   Color="#3a3a3a"/>
+      <SolidColorBrush x:Key="FgBrush"       Color="#000000"/>
+      <SolidColorBrush x:Key="SubFgBrush"    Color="#666666"/>
+      <SolidColorBrush x:Key="BorderBrush"   Color="#d0d0d0"/>
 
       <Style TargetType="Window">
         <Setter Property="Background" Value="{StaticResource BgBrush}"/>
@@ -45,18 +45,20 @@
       </Style>
 
       <Style TargetType="TextBox">
-        <Setter Property="Background"   Value="{StaticResource PanelBrush}"/>
+        <Setter Property="Background"   Value="White"/>
         <Setter Property="Foreground"   Value="{StaticResource FgBrush}"/>
         <Setter Property="BorderBrush"  Value="{StaticResource BorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding"      Value="6,4"/>
         <Setter Property="FontSize"     Value="13"/>
-        <Setter Property="CaretBrush"   Value="White"/>
+        <Setter Property="CaretBrush"   Value="Black"/>
       </Style>
 
       <Style TargetType="ComboBox">
-        <Setter Property="Background"  Value="{StaticResource PanelBrush}"/>
+        <Setter Property="Background"  Value="White"/>
         <Setter Property="Foreground"  Value="{StaticResource FgBrush}"/>
         <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding"     Value="6,4"/>
         <Setter Property="FontSize"    Value="13"/>
       </Style>

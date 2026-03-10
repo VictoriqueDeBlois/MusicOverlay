@@ -1,7 +1,7 @@
 using System.Drawing;
 using System.IO;
 using System.Windows;
-using System.Windows.Forms;
+using System.Windows.Forms;  // requires <UseWindowsForms>true</UseWindowsForms> in .csproj
 using MusicOverlay.Config;
 using MusicOverlay.Core;
 using MusicOverlay.Core.WebServer;
@@ -26,12 +26,13 @@ public partial class App : Application
         Config  = new ConfigManager();
         Manager = new MediaSourceManager(Config);
         Server  = new OverlayServer(Config.App.ServerPort,
-                      Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "web"));
+                      Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "web"),
+                      Config.App.ActiveFrontend);
 
         // Wire media changes → server broadcast
         Manager.MediaChanged += (_, info) =>
         {
-            var themeJson = JsonConvert.SerializeObject(Config.Theme);
+            var themeJson = JsonConvert.SerializeObject(Config.GetActiveTheme());
             Server.UpdateMedia(info, themeJson);
         };
 
@@ -39,6 +40,7 @@ public partial class App : Application
         await Manager.StartAsync();
 
         SetupTrayIcon();
+        ShowMainWindow();  // Show window on startup
     }
 
     private void SetupTrayIcon()

@@ -12,11 +12,20 @@ public class AppConfig
     [JsonProperty("active_source")]
     public string ActiveSource { get; set; } = "smtc_default";
 
+    [JsonProperty("active_theme")]
+    public string ActiveTheme { get; set; } = "vinyl_default";
+
+    [JsonProperty("active_frontend")]
+    public string ActiveFrontend { get; set; } = "default";
+
     [JsonProperty("server_port")]
     public int ServerPort { get; set; } = 9090;
 
     [JsonProperty("sources")]
     public Dictionary<string, JObject> Sources { get; set; } = new();
+
+    [JsonProperty("themes")]
+    public Dictionary<string, JObject> Themes { get; set; } = new();
 }
 
 public class SourceConfig
@@ -75,6 +84,9 @@ public class ScreenshotCropConfig
 
 public class ThemeConfig
 {
+    [JsonProperty("display_name")]
+    public string DisplayName { get; set; } = "New Theme";
+
     [JsonProperty("preset")]
     public string Preset { get; set; } = "vinyl";
 
@@ -124,10 +136,8 @@ public class ConfigManager
         AppDomain.CurrentDomain.BaseDirectory, "config");
 
     private static readonly string SourcesFile = Path.Combine(ConfigDir, "sources.json");
-    private static readonly string ThemeFile   = Path.Combine(ConfigDir, "theme.json");
 
     public AppConfig App { get; private set; } = new();
-    public ThemeConfig Theme { get; private set; } = new();
 
     public ConfigManager()
     {
@@ -137,18 +147,12 @@ public class ConfigManager
 
     public void Load()
     {
-        App   = LoadOrCreate(SourcesFile, BuildDefaultAppConfig());
-        Theme = LoadOrCreate(ThemeFile, BuildDefaultThemeConfig());
+        App = LoadOrCreate(SourcesFile, BuildDefaultAppConfig());
     }
 
-    public void Save()
-    {
-        WriteJson(SourcesFile, App);
-        WriteJson(ThemeFile, Theme);
-    }
+    public void Save() => SaveSources();
 
     public void SaveSources() => WriteJson(SourcesFile, App);
-    public void SaveTheme()   => WriteJson(ThemeFile, Theme);
 
     /// <summary>Deserialise a specific source entry into a typed SourceConfig.</summary>
     public SourceConfig GetSourceConfig(string sourceId)
@@ -162,6 +166,26 @@ public class ConfigManager
     public void SetSourceConfig(string sourceId, SourceConfig cfg)
     {
         App.Sources[sourceId] = JObject.FromObject(cfg);
+    }
+
+    /// <summary>Get the active theme config.</summary>
+    public ThemeConfig GetActiveTheme()
+    {
+        return GetThemeConfig(App.ActiveTheme);
+    }
+
+    /// <summary>Deserialise a specific theme entry into a typed ThemeConfig.</summary>
+    public ThemeConfig GetThemeConfig(string themeId)
+    {
+        if (App.Themes.TryGetValue(themeId, out var jObj))
+            return jObj.ToObject<ThemeConfig>() ?? new ThemeConfig();
+        return new ThemeConfig();
+    }
+
+    /// <summary>Persist a ThemeConfig back into the dictionary.</summary>
+    public void SetThemeConfig(string themeId, ThemeConfig cfg)
+    {
+        App.Themes[themeId] = JObject.FromObject(cfg);
     }
 
     /// <summary>Build an IMediaSource from the active source config.</summary>
@@ -218,6 +242,8 @@ public class ConfigManager
     private static AppConfig BuildDefaultAppConfig() => new()
     {
         ActiveSource = "smtc_default",
+        ActiveTheme = "vinyl_default",
+        ActiveFrontend = "default",
         ServerPort   = 9090,
         Sources = new Dictionary<string, JObject>
         {
@@ -242,15 +268,36 @@ public class ConfigManager
                 ScreenshotCrop = new ScreenshotCropConfig { X = 0.04, Y = 0.10, Width = 0.38, Height = 0.65 },
                 PollIntervalMs = 2000
             })
+        },
+        Themes = new Dictionary<string, JObject>
+        {
+            ["vinyl_default"] = JObject.FromObject(new ThemeConfig
+            {
+                DisplayName = "黑胶旋转",
+                Preset = "vinyl",
+                Cover = new CoverTheme { Size = 200, Shape = "circle", Animation = "rotate", RotationSpeed = 8 },
+                Title = new TextTheme  { Font = "Microsoft YaHei", Size = 28, Color = "#ffffff", Shadow = true, Marquee = true },
+                Artist = new TextTheme { Font = "Microsoft YaHei", Size = 18, Color = "#aaaaaa", Shadow = true, Marquee = false },
+                Background = new BackgroundTheme { Type = "transparent" }
+            }),
+            ["minimal_default"] = JObject.FromObject(new ThemeConfig
+            {
+                DisplayName = "简约风格",
+                Preset = "minimal",
+                Cover = new CoverTheme { Size = 180, Shape = "rounded", Animation = "none", RotationSpeed = 0 },
+                Title = new TextTheme  { Font = "Microsoft YaHei", Size = 24, Color = "#ffffff", Shadow = false, Marquee = true },
+                Artist = new TextTheme { Font = "Microsoft YaHei", Size = 16, Color = "#cccccc", Shadow = false, Marquee = false },
+                Background = new BackgroundTheme { Type = "transparent", Color = "#00000000" }
+            }),
+            ["card_default"] = JObject.FromObject(new ThemeConfig
+            {
+                DisplayName = "卡片风格",
+                Preset = "card",
+                Cover = new CoverTheme { Size = 160, Shape = "rounded", Animation = "pulse", RotationSpeed = 0 },
+                Title = new TextTheme  { Font = "Microsoft YaHei", Size = 26, Color = "#ffffff", Shadow = true, Marquee = true, Bold = true },
+                Artist = new TextTheme { Font = "Microsoft YaHei", Size = 18, Color = "#e0e0e0", Shadow = true, Marquee = false },
+                Background = new BackgroundTheme { Type = "blur_cover", Color = "#00000088" }
+            })
         }
-    };
-
-    private static ThemeConfig BuildDefaultThemeConfig() => new()
-    {
-        Preset = "vinyl",
-        Cover = new CoverTheme { Size = 200, Shape = "circle", Animation = "rotate", RotationSpeed = 8 },
-        Title = new TextTheme  { Font = "Microsoft YaHei", Size = 28, Color = "#ffffff", Shadow = true, Marquee = true },
-        Artist = new TextTheme { Font = "Microsoft YaHei", Size = 18, Color = "#aaaaaa", Shadow = true, Marquee = false },
-        Background = new BackgroundTheme { Type = "transparent" }
     };
 }

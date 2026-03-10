@@ -1,0 +1,34 @@
+/*
+ * user.css — 自定义样式覆盖文件
+ *
+ * 此文件在所有内置主题之后加载，你的规则会覆盖默认样式。
+ * 直接在这里写 CSS 即可，无需重启程序，刷新 OBS 浏览器源生效。
+ *
+ * 可用的 CSS 变量（在 :root 中设置）：
+ *   --cover-size        封面尺寸 (px)
+ *   --cover-shape       封面圆角 (50% = 圆形, 0 = 方形, 12px = 圆角矩形)
+ *   --rotate-speed      旋转一圈时长 (s)
+ *   --title-font        标题字体
+ *   --title-size        标题字号 (px)
+ *   --title-color       标题颜色
+ *   --title-shadow      标题阴影
+ *   --artist-font       艺术家字体
+ *   --artist-size       艺术家字号 (px)
+ *   --artist-color      艺术家颜色
+ *   --bg                背景色
+ *
+ * 示例：让标题变为金色、更大字号
+ *
+ * :root {
+ *   --title-color: #ffd700;
+ *   --title-size:  36px;
+ * }
+ *
+ * 示例：给整体 overlay 加半透明背景
+ *
+ * .overlay {
+ *   background: rgba(0, 0, 0, 0.4);
+ *   border-radius: 12px;
+ *   padding: 12px 20px;
+ * }
+ */

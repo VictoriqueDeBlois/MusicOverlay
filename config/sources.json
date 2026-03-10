@@ -1,6 +1,6 @@
 {
   "active_source": "smtc_default",
-  "server_port": 9090,
+  "server_port": 49090,
   "sources": {
     "smtc_default": {
       "type": "smtc",
