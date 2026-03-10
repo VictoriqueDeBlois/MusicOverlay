@@ -1,0 +1,319 @@
+<Window x:Class="MusicOverlay.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Music Overlay 设置"
+        Width="680" Height="620"
+        ResizeMode="CanMinimize"
+        WindowStartupLocation="CenterScreen"
+        Closing="Window_Closing">
+
+  <Grid Margin="16">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
+
+    <!-- Header -->
+    <StackPanel Grid.Row="0" Margin="0,0,0,12">
+      <TextBlock Text="Music Overlay" FontSize="22" FontWeight="Bold"
+                 Foreground="{StaticResource AccentBrush}"/>
+      <TextBlock x:Name="ServerStatusText" FontSize="12"
+                 Foreground="{StaticResource SubFgBrush}" Margin="0,2,0,0"/>
+    </StackPanel>
+
+    <!-- Tab control -->
+    <TabControl Grid.Row="1" Background="{StaticResource PanelBrush}"
+                BorderBrush="{StaticResource BorderBrush}">
+
+      <!-- ── Tab 1: 音乐源 ── -->
+      <TabItem Header="音乐源">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="12">
+          <StackPanel>
+
+            <!-- Active source selector -->
+            <TextBlock Text="当前使用的音乐源" FontWeight="SemiBold" Margin="0,0,0,6"/>
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+              <ComboBox x:Name="SourceSelector" Width="260" SelectionChanged="SourceSelector_SelectionChanged"/>
+              <Button Content="应用" Margin="8,0,0,0" Click="ApplySource_Click"/>
+            </StackPanel>
+
+            <!-- Source list -->
+            <TextBlock Text="已配置的音乐源" FontWeight="SemiBold" Margin="0,0,0,6"/>
+            <Border Background="{StaticResource BgBrush}" CornerRadius="6"
+                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="8">
+              <StackPanel>
+                <ListBox x:Name="SourceList" Background="Transparent" BorderThickness="0"
+                         SelectionChanged="SourceList_SelectionChanged" MinHeight="80"/>
+                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                  <Button Content="添加 SMTC 源"           Click="AddSmtcSource_Click"   Margin="0,0,8,0"/>
+                  <Button Content="添加窗口捕获源"         Click="AddCaptureSource_Click" Margin="0,0,8,0"/>
+                  <Button Content="删除选中源" Background="#c42b1c" Click="DeleteSource_Click"/>
+                </StackPanel>
+              </StackPanel>
+            </Border>
+
+            <!-- Source editor -->
+            <Border x:Name="SourceEditor" Visibility="Collapsed"
+                    Background="{StaticResource BgBrush}" CornerRadius="6"
+                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
+                    Padding="12" Margin="0,12,0,0">
+              <StackPanel>
+                <TextBlock Text="编辑音乐源" FontWeight="SemiBold" Margin="0,0,0,10"/>
+
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="130"/>
+                    <ColumnDefinition Width="*"/>
+                  </Grid.ColumnDefinitions>
+                  <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                  </Grid.RowDefinitions>
+
+                  <Label Grid.Row="0" Grid.Column="0" Content="显示名称"/>
+                  <TextBox Grid.Row="0" Grid.Column="1" x:Name="EditorDisplayName" Margin="0,2"/>
+
+                  <Label Grid.Row="1" Grid.Column="0" Content="类型"/>
+                  <ComboBox Grid.Row="1" Grid.Column="1" x:Name="EditorType" Margin="0,2"
+                            SelectionChanged="EditorType_SelectionChanged">
+                    <ComboBoxItem Content="smtc" Tag="smtc"/>
+                    <ComboBoxItem Content="window_capture" Tag="window_capture"/>
+                  </ComboBox>
+
+                  <!-- SMTC fields -->
+                  <Label Grid.Row="2" Grid.Column="0" x:Name="LblPreferredApp" Content="指定进程名"/>
+                  <StackPanel Grid.Row="2" Grid.Column="1" x:Name="PanelPreferredApp" Margin="0,2">
+                    <TextBox x:Name="EditorPreferredApp"/>
+                    <TextBlock Text="留空=自动选择当前播放的会话；填写进程名(如 spotify.exe)=固定来源"
+                               Foreground="{StaticResource SubFgBrush}" FontSize="11" TextWrapping="Wrap" Margin="0,2"/>
+                  </StackPanel>
+
+                  <!-- WindowCapture fields -->
+                  <Label Grid.Row="3" Grid.Column="0" x:Name="LblProcessName" Content="进程名" Visibility="Collapsed"/>
+                  <TextBox Grid.Row="3" Grid.Column="1" x:Name="EditorProcessName" Margin="0,2" Visibility="Collapsed"/>
+
+                  <Label Grid.Row="4" Grid.Column="0" x:Name="LblTitleRegex" Content="标题正则" Visibility="Collapsed"/>
+                  <StackPanel Grid.Row="4" Grid.Column="1" x:Name="PanelTitleRegex" Margin="0,2" Visibility="Collapsed">
+                    <TextBox x:Name="EditorTitleRegex"/>
+                    <TextBlock Text="需包含命名组 (?&lt;title&gt;...) 和 (?&lt;artist&gt;...)"
+                               Foreground="{StaticResource SubFgBrush}" FontSize="11" Margin="0,2"/>
+                  </StackPanel>
+
+                  <Label Grid.Row="5" Grid.Column="0" x:Name="LblCoverSource" Content="封面来源" Visibility="Collapsed"/>
+                  <ComboBox Grid.Row="5" Grid.Column="1" x:Name="EditorCoverSource" Margin="0,2" Visibility="Collapsed">
+                    <ComboBoxItem Content="cache"      Tag="cache"/>
+                    <ComboBoxItem Content="screenshot" Tag="screenshot"/>
+                  </ComboBox>
+
+                  <Label Grid.Row="6" Grid.Column="0" x:Name="LblCachePath" Content="缓存路径" Visibility="Collapsed"/>
+                  <TextBox Grid.Row="6" Grid.Column="1" x:Name="EditorCachePath" Margin="0,2" Visibility="Collapsed"/>
+
+                  <Label Grid.Row="7" Grid.Column="0" Content="轮询间隔 (ms)"/>
+                  <TextBox Grid.Row="7" Grid.Column="1" x:Name="EditorPollInterval" Margin="0,2"/>
+                </Grid>
+
+                <Button Content="保存此源" HorizontalAlignment="Left" Margin="0,12,0,0"
+                        Click="SaveSourceEditor_Click"/>
+              </StackPanel>
+            </Border>
+
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <!-- ── Tab 2: 外观 ── -->
+      <TabItem Header="外观">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="12">
+          <StackPanel>
+
+            <TextBlock Text="预设主题" FontWeight="SemiBold" Margin="0,0,0,6"/>
+            <ComboBox x:Name="PresetSelector" Width="200" HorizontalAlignment="Left"
+                      Margin="0,0,0,16" SelectionChanged="PresetSelector_Changed">
+              <ComboBoxItem Content="vinyl (黑胶旋转)"  Tag="vinyl"/>
+              <ComboBoxItem Content="minimal (简约)"   Tag="minimal"/>
+              <ComboBoxItem Content="card (卡片)"      Tag="card"/>
+            </ComboBox>
+
+            <!-- Cover settings -->
+            <TextBlock Text="封面" FontWeight="SemiBold" Margin="0,0,0,6"/>
+            <Border Background="{StaticResource BgBrush}" CornerRadius="6"
+                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="10" Margin="0,0,0,12">
+              <Grid>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120"/>
+                  <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="Auto"/>
+                  <RowDefinition Height="Auto"/>
+                  <RowDefinition Height="Auto"/>
+                  <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Label Grid.Row="0" Grid.Column="0" Content="尺寸 (px)"/>
+                <TextBox Grid.Row="0" Grid.Column="1" x:Name="CoverSize" Margin="0,2"/>
+
+                <Label Grid.Row="1" Grid.Column="0" Content="形状"/>
+                <ComboBox Grid.Row="1" Grid.Column="1" x:Name="CoverShape" Margin="0,2">
+                  <ComboBoxItem Content="circle (圆形)"   Tag="circle"/>
+                  <ComboBoxItem Content="square (方形)"   Tag="square"/>
+                  <ComboBoxItem Content="rounded (圆角)"  Tag="rounded"/>
+                </ComboBox>
+
+                <Label Grid.Row="2" Grid.Column="0" Content="动画"/>
+                <ComboBox Grid.Row="2" Grid.Column="1" x:Name="CoverAnimation" Margin="0,2">
+                  <ComboBoxItem Content="rotate (旋转)" Tag="rotate"/>
+                  <ComboBoxItem Content="pulse (脉冲)"  Tag="pulse"/>
+                  <ComboBoxItem Content="none (无)"     Tag="none"/>
+                </ComboBox>
+
+                <Label Grid.Row="3" Grid.Column="0" Content="旋转速度 (s/圈)"/>
+                <TextBox Grid.Row="3" Grid.Column="1" x:Name="CoverRotationSpeed" Margin="0,2"/>
+              </Grid>
+            </Border>
+
+            <!-- Title settings -->
+            <TextBlock Text="标题文字" FontWeight="SemiBold" Margin="0,0,0,6"/>
+            <Border Background="{StaticResource BgBrush}" CornerRadius="6"
+                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="10" Margin="0,0,0,12">
+              <Grid>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120"/>
+                  <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="Auto"/>
+                  <RowDefinition Height="Auto"/>
+                  <RowDefinition Height="Auto"/>
+                  <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Label Grid.Row="0" Grid.Column="0" Content="字体"/>
+                <TextBox Grid.Row="0" Grid.Column="1" x:Name="TitleFont" Margin="0,2"/>
+                <Label Grid.Row="1" Grid.Column="0" Content="字号 (px)"/>
+                <TextBox Grid.Row="1" Grid.Column="1" x:Name="TitleSize" Margin="0,2"/>
+                <Label Grid.Row="2" Grid.Column="0" Content="颜色 (hex)"/>
+                <TextBox Grid.Row="2" Grid.Column="1" x:Name="TitleColor" Margin="0,2"/>
+                <Label Grid.Row="3" Grid.Column="0" Content="选项"/>
+                <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal">
+                  <CheckBox x:Name="TitleShadow" Content="阴影" Margin="0,0,12,0" Foreground="{StaticResource FgBrush}"/>
+                  <CheckBox x:Name="TitleMarquee" Content="滚动字幕" Foreground="{StaticResource FgBrush}"/>
+                  <CheckBox x:Name="TitleBold" Content="加粗" Margin="12,0,0,0" Foreground="{StaticResource FgBrush}"/>
+                </StackPanel>
+              </Grid>
+            </Border>
+
+            <!-- Artist settings -->
+            <TextBlock Text="艺术家文字" FontWeight="SemiBold" Margin="0,0,0,6"/>
+            <Border Background="{StaticResource BgBrush}" CornerRadius="6"
+                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="10" Margin="0,0,0,12">
+              <Grid>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120"/>
+                  <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="Auto"/>
+                  <RowDefinition Height="Auto"/>
+                  <RowDefinition Height="Auto"/>
+                  <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Label Grid.Row="0" Grid.Column="0" Content="字体"/>
+                <TextBox Grid.Row="0" Grid.Column="1" x:Name="ArtistFont" Margin="0,2"/>
+                <Label Grid.Row="1" Grid.Column="0" Content="字号 (px)"/>
+                <TextBox Grid.Row="1" Grid.Column="1" x:Name="ArtistSize" Margin="0,2"/>
+                <Label Grid.Row="2" Grid.Column="0" Content="颜色 (hex)"/>
+                <TextBox Grid.Row="2" Grid.Column="1" x:Name="ArtistColor" Margin="0,2"/>
+                <Label Grid.Row="3" Grid.Column="0" Content="选项"/>
+                <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal">
+                  <CheckBox x:Name="ArtistShadow"  Content="阴影"    Margin="0,0,12,0" Foreground="{StaticResource FgBrush}"/>
+                  <CheckBox x:Name="ArtistMarquee" Content="滚动字幕" Foreground="{StaticResource FgBrush}"/>
+                  <CheckBox x:Name="ArtistBold"    Content="加粗"    Margin="12,0,0,0" Foreground="{StaticResource FgBrush}"/>
+                </StackPanel>
+              </Grid>
+            </Border>
+
+            <!-- Background -->
+            <TextBlock Text="背景" FontWeight="SemiBold" Margin="0,0,0,6"/>
+            <Border Background="{StaticResource BgBrush}" CornerRadius="6"
+                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="10">
+              <Grid>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120"/>
+                  <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="Auto"/>
+                  <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Label Grid.Row="0" Grid.Column="0" Content="类型"/>
+                <ComboBox Grid.Row="0" Grid.Column="1" x:Name="BgType" Margin="0,2">
+                  <ComboBoxItem Content="transparent (透明)" Tag="transparent"/>
+                  <ComboBoxItem Content="color (纯色)"       Tag="color"/>
+                  <ComboBoxItem Content="blur_cover (封面模糊)" Tag="blur_cover"/>
+                </ComboBox>
+                <Label Grid.Row="1" Grid.Column="0" Content="颜色 (hex+alpha)"/>
+                <TextBox Grid.Row="1" Grid.Column="1" x:Name="BgColor" Margin="0,2"/>
+              </Grid>
+            </Border>
+
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <!-- ── Tab 3: 状态 / 预览 ── -->
+      <TabItem Header="状态">
+        <StackPanel Margin="12">
+          <TextBlock Text="当前播放" FontWeight="SemiBold" Margin="0,0,0,8"/>
+          <Border Background="{StaticResource BgBrush}" CornerRadius="6"
+                  BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="12" Margin="0,0,0,12">
+            <StackPanel>
+              <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                <TextBlock Text="标题: " Foreground="{StaticResource SubFgBrush}"/>
+                <TextBlock x:Name="StatusTitle" Foreground="{StaticResource FgBrush}"/>
+              </StackPanel>
+              <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                <TextBlock Text="艺术家: " Foreground="{StaticResource SubFgBrush}"/>
+                <TextBlock x:Name="StatusArtist" Foreground="{StaticResource FgBrush}"/>
+              </StackPanel>
+              <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                <TextBlock Text="来源: " Foreground="{StaticResource SubFgBrush}"/>
+                <TextBlock x:Name="StatusSource" Foreground="{StaticResource FgBrush}"/>
+              </StackPanel>
+              <StackPanel Orientation="Horizontal">
+                <TextBlock Text="封面: " Foreground="{StaticResource SubFgBrush}"/>
+                <TextBlock x:Name="StatusCover" Foreground="{StaticResource FgBrush}"/>
+              </StackPanel>
+            </StackPanel>
+          </Border>
+
+          <TextBlock Text="OBS 浏览器源地址" FontWeight="SemiBold" Margin="0,0,0,8"/>
+          <Border Background="{StaticResource BgBrush}" CornerRadius="6"
+                  BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="12">
+            <StackPanel>
+              <TextBlock x:Name="UrlFull"   Margin="0,0,0,4" Foreground="#4fc3f7" Cursor="Hand" MouseLeftButtonUp="OpenUrl"/>
+              <TextBlock x:Name="UrlCover"  Margin="0,0,0,4" Foreground="#4fc3f7" Cursor="Hand" MouseLeftButtonUp="OpenUrl"/>
+              <TextBlock x:Name="UrlTitle"  Margin="0,0,0,4" Foreground="#4fc3f7" Cursor="Hand" MouseLeftButtonUp="OpenUrl"/>
+              <TextBlock x:Name="UrlArtist" Margin="0,0,0,4" Foreground="#4fc3f7" Cursor="Hand" MouseLeftButtonUp="OpenUrl"/>
+              <TextBlock x:Name="UrlApi"    Foreground="#4fc3f7" Cursor="Hand" MouseLeftButtonUp="OpenUrl"/>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </TabItem>
+
+    </TabControl>
+
+    <!-- Footer buttons -->
+    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+      <Button Content="保存外观设置" Click="SaveTheme_Click" Margin="0,0,8,0"/>
+      <Button Content="最小化到托盘" Background="#3a3a3a" Click="HideToTray_Click"/>
+    </StackPanel>
+
+  </Grid>
+</Window>

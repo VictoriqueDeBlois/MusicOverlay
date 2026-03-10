@@ -1,0 +1,326 @@
+using System.Diagnostics;
+using System.Windows;
+using System.Windows.Input;
+using MusicOverlay.Config;
+using MusicOverlay.Core.Models;
+using Newtonsoft.Json.Linq;
+
+namespace MusicOverlay;
+
+public partial class MainWindow : Window
+{
+    private ConfigManager Config => App.Config;
+    private string? _editingSourceId;
+
+    public MainWindow()
+    {
+        InitializeComponent();
+        Loaded += MainWindow_Loaded;
+        App.Manager.MediaChanged += OnMediaChanged;
+    }
+
+    private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+    {
+        var port = Config.App.ServerPort;
+        ServerStatusText.Text = $"HTTP 服务运行在 http://localhost:{port}/";
+
+        SetupUrls(port);
+        LoadSourceList();
+        LoadThemeEditor();
+        RefreshStatus(App.Manager.CurrentInfo);
+    }
+
+    // ── Status tab ───────────────────────────────────────────────────────────
+
+    private void SetupUrls(int port)
+    {
+        UrlFull.Text   = $"http://localhost:{port}/          (完整 overlay)";
+        UrlCover.Text  = $"http://localhost:{port}/cover     (仅封面)";
+        UrlTitle.Text  = $"http://localhost:{port}/title     (仅标题)";
+        UrlArtist.Text = $"http://localhost:{port}/artist    (仅艺术家)";
+        UrlApi.Text    = $"http://localhost:{port}/api/now   (JSON 数据)";
+
+        // Store the bare URL in Tag for click-to-open
+        UrlFull.Tag   = $"http://localhost:{port}/";
+        UrlCover.Tag  = $"http://localhost:{port}/cover";
+        UrlTitle.Tag  = $"http://localhost:{port}/title";
+        UrlArtist.Tag = $"http://localhost:{port}/artist";
+        UrlApi.Tag    = $"http://localhost:{port}/api/now";
+    }
+
+    private void OnMediaChanged(object? sender, MediaInfo info)
+    {
+        Dispatcher.Invoke(() => RefreshStatus(info));
+    }
+
+    private void RefreshStatus(MediaInfo info)
+    {
+        StatusTitle.Text  = info.Title  is { Length: > 0 } t ? t : "(无)";
+        StatusArtist.Text = info.Artist is { Length: > 0 } a ? a : "(无)";
+        StatusSource.Text = info.SourceId is { Length: > 0 } s ? s : "(无)";
+        StatusCover.Text  = info.CoverBase64.Length > 0 ? $"已获取 ({info.CoverBase64.Length / 1024} KB)" : "无封面";
+    }
+
+    private void OpenUrl(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is System.Windows.Controls.TextBlock tb && tb.Tag is string url)
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+    }
+
+    // ── Sources tab ──────────────────────────────────────────────────────────
+
+    private void LoadSourceList()
+    {
+        SourceList.Items.Clear();
+        SourceSelector.Items.Clear();
+
+        foreach (var kv in Config.App.Sources)
+        {
+            var cfg = Config.GetSourceConfig(kv.Key);
+            var label = $"{cfg.DisplayName}  [{kv.Key}]  ({cfg.Type})";
+            SourceList.Items.Add(new System.Windows.Controls.ListBoxItem
+            {
+                Content = label, Tag = kv.Key
+            });
+            SourceSelector.Items.Add(new System.Windows.Controls.ComboBoxItem
+            {
+                Content = cfg.DisplayName, Tag = kv.Key
+            });
+        }
+
+        // Select active
+        foreach (System.Windows.Controls.ComboBoxItem item in SourceSelector.Items)
+        {
+            if (item.Tag as string == Config.App.ActiveSource)
+            {
+                SourceSelector.SelectedItem = item;
+                break;
+            }
+        }
+    }
+
+    private void SourceList_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (SourceList.SelectedItem is System.Windows.Controls.ListBoxItem li && li.Tag is string id)
+            OpenSourceEditor(id);
+    }
+
+    private void OpenSourceEditor(string sourceId)
+    {
+        _editingSourceId = sourceId;
+        var cfg = Config.GetSourceConfig(sourceId);
+
+        EditorDisplayName.Text    = cfg.DisplayName;
+        EditorPreferredApp.Text   = cfg.PreferredApp;
+        EditorProcessName.Text    = cfg.ProcessName;
+        EditorTitleRegex.Text     = cfg.TitleRegex;
+        EditorCachePath.Text      = cfg.CachePath;
+        EditorPollInterval.Text   = cfg.PollIntervalMs.ToString();
+
+        // Type selector
+        foreach (System.Windows.Controls.ComboBoxItem item in EditorType.Items)
+            if (item.Tag as string == cfg.Type) { EditorType.SelectedItem = item; break; }
+
+        // Cover source selector
+        foreach (System.Windows.Controls.ComboBoxItem item in EditorCoverSource.Items)
+            if (item.Tag as string == cfg.CoverSource) { EditorCoverSource.SelectedItem = item; break; }
+
+        ApplyEditorTypeVisibility(cfg.Type);
+        SourceEditor.Visibility = Visibility.Visible;
+    }
+
+    private void ApplyEditorTypeVisibility(string type)
+    {
+        bool isCapture = type == "window_capture";
+        var vis = isCapture ? Visibility.Visible : Visibility.Collapsed;
+        LblProcessName.Visibility = vis; EditorProcessName.Visibility = vis;
+        LblTitleRegex.Visibility  = vis; PanelTitleRegex.Visibility   = vis;
+        LblCoverSource.Visibility = vis; EditorCoverSource.Visibility = vis;
+        LblCachePath.Visibility   = vis; EditorCachePath.Visibility   = vis;
+
+        PanelPreferredApp.Visibility = isCapture ? Visibility.Collapsed : Visibility.Visible;
+        LblPreferredApp.Visibility   = isCapture ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    private void EditorType_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (EditorType.SelectedItem is System.Windows.Controls.ComboBoxItem item)
+            ApplyEditorTypeVisibility(item.Tag as string ?? "smtc");
+    }
+
+    private void SaveSourceEditor_Click(object sender, RoutedEventArgs e)
+    {
+        if (_editingSourceId == null) return;
+
+        var cfg = Config.GetSourceConfig(_editingSourceId);
+        cfg.DisplayName  = EditorDisplayName.Text.Trim();
+        cfg.PreferredApp = EditorPreferredApp.Text.Trim();
+        cfg.ProcessName  = EditorProcessName.Text.Trim();
+        cfg.TitleRegex   = EditorTitleRegex.Text.Trim();
+        cfg.CachePath    = EditorCachePath.Text.Trim();
+        if (int.TryParse(EditorPollInterval.Text, out var ms)) cfg.PollIntervalMs = ms;
+
+        if (EditorType.SelectedItem is System.Windows.Controls.ComboBoxItem typeItem)
+            cfg.Type = typeItem.Tag as string ?? "smtc";
+        if (EditorCoverSource.SelectedItem is System.Windows.Controls.ComboBoxItem coverItem)
+            cfg.CoverSource = coverItem.Tag as string ?? "cache";
+
+        cfg.ScreenshotCrop = new ScreenshotCropConfig
+        {
+            X = 0.04, Y = 0.10, Width = 0.38, Height = 0.65 // kept from original, editable in sources.json directly
+        };
+
+        Config.SetSourceConfig(_editingSourceId, cfg);
+        Config.SaveSources();
+        LoadSourceList();
+        MessageBox.Show("已保存。如果此源当前正在使用，请重新应用以生效。", "保存成功",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+    }
+
+    private void AddSmtcSource_Click(object sender, RoutedEventArgs e)
+    {
+        var id = $"smtc_{Guid.NewGuid().ToString()[..6]}";
+        Config.SetSourceConfig(id, new SourceConfig { Type = "smtc", DisplayName = "新 SMTC 源" });
+        Config.SaveSources();
+        LoadSourceList();
+        OpenSourceEditor(id);
+    }
+
+    private void AddCaptureSource_Click(object sender, RoutedEventArgs e)
+    {
+        var id = $"capture_{Guid.NewGuid().ToString()[..6]}";
+        Config.SetSourceConfig(id, new SourceConfig { Type = "window_capture", DisplayName = "新窗口捕获源" });
+        Config.SaveSources();
+        LoadSourceList();
+        OpenSourceEditor(id);
+    }
+
+    private void DeleteSource_Click(object sender, RoutedEventArgs e)
+    {
+        if (_editingSourceId == null) return;
+        if (_editingSourceId == Config.App.ActiveSource)
+        {
+            MessageBox.Show("无法删除当前正在使用的源，请先切换到其他源。", "提示",
+                            MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+        Config.App.Sources.Remove(_editingSourceId);
+        Config.SaveSources();
+        _editingSourceId = null;
+        SourceEditor.Visibility = Visibility.Collapsed;
+        LoadSourceList();
+    }
+
+    private void SourceSelector_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e) { }
+
+    private async void ApplySource_Click(object sender, RoutedEventArgs e)
+    {
+        if (SourceSelector.SelectedItem is System.Windows.Controls.ComboBoxItem item &&
+            item.Tag is string id)
+        {
+            await App.Manager.SwitchSourceAsync(id);
+            LoadSourceList();
+            MessageBox.Show($"已切换到：{item.Content}", "已应用", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+    }
+
+    // ── Theme tab ────────────────────────────────────────────────────────────
+
+    private void LoadThemeEditor()
+    {
+        var t = Config.Theme;
+
+        foreach (System.Windows.Controls.ComboBoxItem item in PresetSelector.Items)
+            if (item.Tag as string == t.Preset) { PresetSelector.SelectedItem = item; break; }
+
+        CoverSize.Text          = t.Cover.Size.ToString();
+        CoverRotationSpeed.Text = t.Cover.RotationSpeed.ToString();
+        foreach (System.Windows.Controls.ComboBoxItem item in CoverShape.Items)
+            if (item.Tag as string == t.Cover.Shape) { CoverShape.SelectedItem = item; break; }
+        foreach (System.Windows.Controls.ComboBoxItem item in CoverAnimation.Items)
+            if (item.Tag as string == t.Cover.Animation) { CoverAnimation.SelectedItem = item; break; }
+
+        TitleFont.Text    = t.Title.Font;
+        TitleSize.Text    = t.Title.Size.ToString();
+        TitleColor.Text   = t.Title.Color;
+        TitleShadow.IsChecked  = t.Title.Shadow;
+        TitleMarquee.IsChecked = t.Title.Marquee;
+        TitleBold.IsChecked    = t.Title.Bold;
+
+        ArtistFont.Text    = t.Artist.Font;
+        ArtistSize.Text    = t.Artist.Size.ToString();
+        ArtistColor.Text   = t.Artist.Color;
+        ArtistShadow.IsChecked  = t.Artist.Shadow;
+        ArtistMarquee.IsChecked = t.Artist.Marquee;
+        ArtistBold.IsChecked    = t.Artist.Bold;
+
+        foreach (System.Windows.Controls.ComboBoxItem item in BgType.Items)
+            if (item.Tag as string == t.Background.Type) { BgType.SelectedItem = item; break; }
+        BgColor.Text = t.Background.Color;
+    }
+
+    private void PresetSelector_Changed(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (PresetSelector.SelectedItem is System.Windows.Controls.ComboBoxItem item)
+            Config.Theme.Preset = item.Tag as string ?? "vinyl";
+    }
+
+    private void SaveTheme_Click(object sender, RoutedEventArgs e)
+    {
+        var t = Config.Theme;
+
+        if (PresetSelector.SelectedItem is System.Windows.Controls.ComboBoxItem presetItem)
+            t.Preset = presetItem.Tag as string ?? "vinyl";
+
+        if (int.TryParse(CoverSize.Text, out var cs))  t.Cover.Size  = cs;
+        if (int.TryParse(CoverRotationSpeed.Text, out var rs)) t.Cover.RotationSpeed = rs;
+        if (CoverShape.SelectedItem     is System.Windows.Controls.ComboBoxItem shapeItem)
+            t.Cover.Shape     = shapeItem.Tag as string ?? "circle";
+        if (CoverAnimation.SelectedItem is System.Windows.Controls.ComboBoxItem animItem)
+            t.Cover.Animation = animItem.Tag as string ?? "rotate";
+
+        t.Title.Font    = TitleFont.Text.Trim();
+        t.Title.Color   = TitleColor.Text.Trim();
+        t.Title.Shadow  = TitleShadow.IsChecked  == true;
+        t.Title.Marquee = TitleMarquee.IsChecked == true;
+        t.Title.Bold    = TitleBold.IsChecked    == true;
+        if (int.TryParse(TitleSize.Text, out var tSize)) t.Title.Size = tSize;
+
+        t.Artist.Font    = ArtistFont.Text.Trim();
+        t.Artist.Color   = ArtistColor.Text.Trim();
+        t.Artist.Shadow  = ArtistShadow.IsChecked  == true;
+        t.Artist.Marquee = ArtistMarquee.IsChecked == true;
+        t.Artist.Bold    = ArtistBold.IsChecked    == true;
+        if (int.TryParse(ArtistSize.Text, out var aSize)) t.Artist.Size = aSize;
+
+        if (BgType.SelectedItem is System.Windows.Controls.ComboBoxItem bgItem)
+            t.Background.Type = bgItem.Tag as string ?? "transparent";
+        t.Background.Color = BgColor.Text.Trim();
+
+        Config.SaveTheme();
+
+        // Push updated theme to connected overlay pages immediately
+        var themeJson = Newtonsoft.Json.JsonConvert.SerializeObject(t);
+        App.Server.UpdateMedia(App.Manager.CurrentInfo, themeJson);
+
+        MessageBox.Show("外观设置已保存并推送到 overlay。", "保存成功",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+    }
+
+    // ── Window behaviour ─────────────────────────────────────────────────────
+
+    private void HideToTray_Click(object sender, RoutedEventArgs e) => Hide();
+
+    private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+    {
+        // Intercept close → hide to tray instead of destroying the window
+        e.Cancel = true;
+        Hide();
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        App.Manager.MediaChanged -= OnMediaChanged;
+        base.OnClosed(e);
+    }
+}

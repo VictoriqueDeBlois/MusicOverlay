@@ -1,0 +1,29 @@
+{
+  "preset": "vinyl",
+  "cover": {
+    "size": 200,
+    "shape": "circle",
+    "animation": "rotate",
+    "rotation_speed": 8
+  },
+  "title": {
+    "font": "Microsoft YaHei",
+    "size": 28,
+    "color": "#ffffff",
+    "shadow": true,
+    "marquee": true,
+    "bold": false
+  },
+  "artist": {
+    "font": "Microsoft YaHei",
+    "size": 18,
+    "color": "#aaaaaa",
+    "shadow": true,
+    "marquee": false,
+    "bold": false
+  },
+  "background": {
+    "type": "transparent",
+    "color": "#00000080"
+  }
+}

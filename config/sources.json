@@ -1,0 +1,27 @@
+{
+  "active_source": "smtc_default",
+  "server_port": 9090,
+  "sources": {
+    "smtc_default": {
+      "type": "smtc",
+      "display_name": "系统媒体 (SMTC)",
+      "preferred_app": "",
+      "poll_interval_ms": 1000
+    },
+    "netease": {
+      "type": "window_capture",
+      "display_name": "网易云音乐",
+      "process_name": "cloudmusic.exe",
+      "title_regex": "^(?<title>.+?)\\s*[-–]\\s*(?<artist>.+?)\\s*[-–]\\s*网易云音乐$",
+      "cover_source": "cache",
+      "cache_path": "%AppData%\\Local\\Netease\\CloudMusic\\Cache\\Avatar",
+      "screenshot_crop": {
+        "x": 0.04,
+        "y": 0.10,
+        "width": 0.38,
+        "height": 0.65
+      },
+      "poll_interval_ms": 2000
+    }
+  }
+}
