@@ -194,7 +194,13 @@ public class ConfigManager
         return cfg.Type switch
         {
             "smtc" => new SmtcMediaSource(id, cfg.PreferredApp, cfg.SmtcTitleRegex, cfg.SmtcArtistRegex, cfg.PollIntervalMs),
-            "window_capture" => new WindowCaptureSource(
+            "netease_webdb" => new NeteaseWebDbSource(
+                id,
+                cfg.ProcessName,
+                cfg.TitleRegex,
+                cfg.WebDbPath,
+                cfg.PollIntervalMs),
+            "window_capture" => new NeteaseWebDbSource(
                 id,
                 cfg.ProcessName,
                 cfg.TitleRegex,
@@ -247,7 +253,7 @@ public class ConfigManager
             }),
             ["netease_cloudmusic"] = JObject.FromObject(new SourceConfig
             {
-                Type        = "window_capture",
+                Type        = "netease_webdb",
                 DisplayName = "网易云音乐",
                 ProcessName = "cloudmusic.exe",
                 // Regex: parse "歌曲名 - 艺术家 - 网易云音乐" from window title.

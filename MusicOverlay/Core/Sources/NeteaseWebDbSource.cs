@@ -11,14 +11,11 @@ using Newtonsoft.Json.Linq;
 namespace MusicOverlay.Core.Sources;
 
 /// <summary>
-/// Media source for apps that don't support SMTC (e.g. NetEase Cloud Music).
-/// 
-/// Title/Artist: parsed from the window title using a user-configurable regex.
-///   The regex must contain named groups: (?&lt;title&gt;...) and (?&lt;artist&gt;...)
-///
-/// Cover image: read from NetEase webdb.dat (historyTracks) and download via picUrl.
+/// Media source for NetEase Cloud Music using webdb.dat (historyTracks).
+/// Title/Artist are parsed from the window title by regex.
+/// Cover image is downloaded via album picUrl from webdb.dat.
 /// </summary>
-public class WindowCaptureSource : IMediaSource
+public class NeteaseWebDbSource : IMediaSource
 {
     // ── Win32 P/Invoke ────────────────────────────────────────────────────────
     [DllImport("user32.dll")]
@@ -54,7 +51,7 @@ public class WindowCaptureSource : IMediaSource
     public bool IsRunning { get; private set; }
     public event EventHandler<MediaInfo>? MediaChanged;
 
-    public WindowCaptureSource(
+    public NeteaseWebDbSource(
         string sourceId,
         string processName,
         string titleRegexPattern,

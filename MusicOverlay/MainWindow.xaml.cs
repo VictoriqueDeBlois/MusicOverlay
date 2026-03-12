@@ -123,7 +123,14 @@ public partial class MainWindow : Window
         foreach (var kv in Config.App.Sources)
         {
             var cfg = Config.GetSourceConfig(kv.Key);
-            var label = $"{cfg.DisplayName}  [{kv.Key}]  ({cfg.Type})";
+            var typeLabel = cfg.Type switch
+            {
+                "smtc" => "系统媒体 (SMTC)",
+                "netease_webdb" => "网易云 (WebDB)",
+                "window_capture" => "网易云 (WebDB)",
+                _ => cfg.Type
+            };
+            var label = $"{cfg.DisplayName}  [{kv.Key}]  ({typeLabel})";
             SourceList.Items.Add(new System.Windows.Controls.ListBoxItem
             {
                 Content = label, Tag = kv.Key
@@ -166,8 +173,9 @@ public partial class MainWindow : Window
         EditorPollInterval.Text     = cfg.PollIntervalMs.ToString();
 
         // Type selector
+        var editorType = cfg.Type == "window_capture" ? "netease_webdb" : cfg.Type;
         foreach (System.Windows.Controls.ComboBoxItem item in EditorType.Items)
-            if (item.Tag as string == cfg.Type) { EditorType.SelectedItem = item; break; }
+            if (item.Tag as string == editorType) { EditorType.SelectedItem = item; break; }
 
         ApplyEditorTypeVisibility(cfg.Type);
         SourceEditor.Visibility = Visibility.Visible;
@@ -175,7 +183,7 @@ public partial class MainWindow : Window
 
     private void ApplyEditorTypeVisibility(string type)
     {
-        bool isCapture = type == "window_capture";
+        bool isCapture = type == "netease_webdb" || type == "window_capture";
         var smtcVis    = isCapture ? Visibility.Collapsed : Visibility.Visible;
         var captureVis = isCapture ? Visibility.Visible   : Visibility.Collapsed;
 
@@ -227,19 +235,10 @@ public partial class MainWindow : Window
                         MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
-    private void AddSmtcSource_Click(object sender, RoutedEventArgs e)
+    private void AddSource_Click(object sender, RoutedEventArgs e)
     {
-        var id = $"smtc_{Guid.NewGuid().ToString()[..6]}";
-        Config.SetSourceConfig(id, new SourceConfig { Type = "smtc", DisplayName = "新 SMTC 源" });
-        Config.SaveSources();
-        LoadSourceList();
-        OpenSourceEditor(id);
-    }
-
-    private void AddCaptureSource_Click(object sender, RoutedEventArgs e)
-    {
-        var id = $"capture_{Guid.NewGuid().ToString()[..6]}";
-        Config.SetSourceConfig(id, new SourceConfig { Type = "window_capture", DisplayName = "新窗口捕获源" });
+        var id = $"source_{Guid.NewGuid().ToString()[..6]}";
+        Config.SetSourceConfig(id, new SourceConfig { Type = "smtc", DisplayName = "新音乐源" });
         Config.SaveSources();
         LoadSourceList();
         OpenSourceEditor(id);
@@ -504,30 +503,13 @@ public partial class MainWindow : Window
                         MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
-    private void AddVinylTheme_Click(object sender, RoutedEventArgs e)
+    private void AddTheme_Click(object sender, RoutedEventArgs e)
     {
-        var id = $"vinyl_{Guid.NewGuid().ToString()[..6]}";
+        var id = $"theme_{Guid.NewGuid().ToString()[..6]}";
         Config.SetThemeConfig(id, new ThemeConfig
         {
-            DisplayName = "新黑胶主题",
-            Preset = "vinyl",
-            Cover = new CoverTheme { Size = 200, Shape = "circle", Animation = "rotate", RotationSpeed = 8 },
-            Title = new TextTheme  { Font = "Microsoft YaHei", Size = 28, Color = "#ffffff", Shadow = true, Marquee = true },
-            Artist = new TextTheme { Font = "Microsoft YaHei", Size = 18, Color = "#aaaaaa", Shadow = true, Marquee = false },
-            Background = new BackgroundTheme { Type = "transparent" }
-        });
-        Config.SaveSources();
-        LoadThemeList();
-        OpenThemeEditor(id);
-    }
-
-    private void AddCustomTheme_Click(object sender, RoutedEventArgs e)
-    {
-        var id = $"custom_{Guid.NewGuid().ToString()[..6]}";
-        Config.SetThemeConfig(id, new ThemeConfig
-        {
-            DisplayName = "自定义主题",
-            Preset = "vinyl"
+            DisplayName = "新主题",
+            Preset = "card"
         });
         Config.SaveSources();
         LoadThemeList();

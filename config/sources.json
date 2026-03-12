@@ -11,7 +11,7 @@
       "poll_interval_ms": 1000
     },
     "netease_cloudmusic": {
-      "type": "window_capture",
+      "type": "netease_webdb",
       "display_name": "网易云音乐",
       "process_name": "cloudmusic.exe",
       "title_regex": "^(?<title>.+?)\\s*[-–]\\s*(?<artist>.+?)\\s*$",

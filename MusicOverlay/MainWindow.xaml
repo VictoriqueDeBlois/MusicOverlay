@@ -46,8 +46,7 @@
                 <ListBox x:Name="SourceList" Background="Transparent" BorderThickness="0"
                          SelectionChanged="SourceList_SelectionChanged" MinHeight="80"/>
                 <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                  <Button Content="添加 SMTC 源"           Click="AddSmtcSource_Click"   Margin="0,0,8,0"/>
-                  <Button Content="添加窗口捕获源"         Click="AddCaptureSource_Click" Margin="0,0,8,0"/>
+                  <Button Content="添加音乐源" Click="AddSource_Click" Margin="0,0,8,0"/>
                   <Button Content="删除选中源" Background="#c42b1c" Click="DeleteSource_Click"/>
                 </StackPanel>
               </StackPanel>
@@ -84,8 +83,8 @@
                   <Label Grid.Row="1" Grid.Column="0" Content="类型"/>
                   <ComboBox Grid.Row="1" Grid.Column="1" x:Name="EditorType" Margin="0,2"
                             SelectionChanged="EditorType_SelectionChanged">
-                    <ComboBoxItem Content="smtc" Tag="smtc"/>
-                    <ComboBoxItem Content="window_capture" Tag="window_capture"/>
+                    <ComboBoxItem Content="系统媒体 (SMTC)" Tag="smtc"/>
+                    <ComboBoxItem Content="网易云 (WebDB)" Tag="netease_webdb"/>
                   </ComboBox>
 
                   <!-- SMTC fields -->
@@ -157,8 +156,7 @@
                 <ListBox x:Name="ThemeList" Background="Transparent" BorderThickness="0"
                          SelectionChanged="ThemeList_SelectionChanged" MinHeight="80"/>
                 <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                  <Button Content="添加黑胶主题" Click="AddVinylTheme_Click" Margin="0,0,8,0"/>
-                  <Button Content="添加自定义主题" Click="AddCustomTheme_Click" Margin="0,0,8,0"/>
+                  <Button Content="添加主题" Click="AddTheme_Click" Margin="0,0,8,0"/>
                   <Button Content="删除选中主题" Background="#c42b1c" Click="DeleteTheme_Click"/>
                 </StackPanel>
               </StackPanel>

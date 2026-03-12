@@ -48,7 +48,7 @@ MusicOverlay/
     ├── Sources/
     │   ├── IMediaSource.cs          # 音乐源接口
     │   ├── SmtcMediaSource.cs       # Windows SMTC 集成（含正则提取）
-    │   └── WindowCaptureSource.cs   # 窗口标题捕获 + 正则解析
+    │   └── NeteaseWebDbSource.cs    # 网易云 webdb 读取 + 正则解析
     └── WebServer/
         └── OverlayServer.cs         # HTTP + WebSocket 服务器
 
@@ -109,16 +109,16 @@ smtc_title_regex: ^(?<artist>.+?) - (?<title>.+)$
 
 ---
 
-### 窗口捕获类型
+### 网易云 (WebDB) 类型
 
 适用于网易云等无 SMTC 支持的软件，从窗口标题用正则解析信息。
 
 ```json
 {
-  "type": "window_capture",
+  "type": "netease_webdb",
   "display_name": "网易云音乐",
   "process_name": "cloudmusic.exe",
-  "title_regex": "^(?<title>.+?)\\s*[-–]\\s*(?<artist>.+?)\\s*[-–]\\s*网易云音乐$",
+  "title_regex": "^(?<title>.+?)\\s*[-–]\\s*(?<artist>.+?)\\s*$",
   "webdb_path": "%LocalAppData%\\NetEase\\CloudMusic\\Library\\webdb.dat",
   "poll_interval_ms": 2000
 }
