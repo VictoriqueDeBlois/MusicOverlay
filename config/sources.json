@@ -1,5 +1,5 @@
 {
-  "active_source": "foobar2000",
+  "active_source": "smtc_system",
   "active_theme": "card",
   "active_frontend": "default",
   "server_port": 49090,
@@ -27,9 +27,11 @@
       "display_name": "Foobar2000",
       "preferred_app": "foobar2000.exe",
       "smtc_title_regex": "",
-      "smtc_artist_regex": "",
+      "smtc_artist_regex": "(?<artist>.+)",
       "smtc_album_regex": "",
-      "title_regex": "",
+      "process_name": "",
+      "title_regex": "((?<artist>.+?) - )?(\\[(?<album>.+?)\\s*(CD\\d*)*\\s*(#\\d+)*\\])?.+?\\[foobar2000\\]",
+      "webdb_path": "%LocalAppData%\\NetEase\\CloudMusic\\Library\\webdb.dat",
       "poll_interval_ms": 1000
     },
     "apple_music": {
@@ -37,9 +39,11 @@
       "display_name": "Apple Music",
       "preferred_app": "AppleMusic",
       "smtc_title_regex": "",
-      "smtc_artist_regex": "",
+      "smtc_artist_regex": "(?<artist>.+?) — (?<album>.+)",
       "smtc_album_regex": "",
+      "process_name": "",
       "title_regex": "",
+      "webdb_path": "%LocalAppData%\\NetEase\\CloudMusic\\Library\\webdb.dat",
       "poll_interval_ms": 1000
     },
     "qq_music": {

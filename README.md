@@ -117,7 +117,7 @@ smtc_title_regex: ^(?<artist>.+?) - (?<title>.+)$
 
 ### 网易云 (WebDB) 类型
 
-适用于网易云等无 SMTC 支持的软件，从窗口标题用正则解析信息。
+适用于网易云等无 SMTC 支持的软件，从窗口标题用正则解析信息，并从 webdb 获取封面与补充字段。
 
 ```json
 {
@@ -126,7 +126,7 @@ smtc_title_regex: ^(?<artist>.+?) - (?<title>.+)$
   "process_name": "cloudmusic.exe",
   "title_regex": "^(?<title>.+?)\\s*[-–]\\s*(?<artist>.+?)\\s*$",
   "webdb_path": "%LocalAppData%\\NetEase\\CloudMusic\\Library\\webdb.dat",
-  "poll_interval_ms": 2000
+  "poll_interval_ms": 1000
 }
 ```
 
