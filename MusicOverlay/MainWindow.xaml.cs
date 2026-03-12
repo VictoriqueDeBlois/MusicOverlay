@@ -37,14 +37,14 @@ public partial class MainWindow : Window
 
     private void SetupUrls(int port)
     {
-        UrlFull.Text   = $"http://localhost:{port}/          (完整 overlay)";
+        // UrlFull.Text   = $"http://localhost:{port}/          (完整 overlay)";
         UrlCover.Text  = $"http://localhost:{port}/cover     (仅封面)";
         UrlTitle.Text  = $"http://localhost:{port}/title     (仅标题)";
         UrlArtist.Text = $"http://localhost:{port}/artist    (仅艺术家)";
         UrlApi.Text    = $"http://localhost:{port}/api/now   (JSON 数据)";
 
         // Store the bare URL in Tag for click-to-open
-        UrlFull.Tag   = $"http://localhost:{port}/";
+        // UrlFull.Tag   = $"http://localhost:{port}/";
         UrlCover.Tag  = $"http://localhost:{port}/cover";
         UrlTitle.Tag  = $"http://localhost:{port}/title";
         UrlArtist.Tag = $"http://localhost:{port}/artist";
@@ -156,12 +156,14 @@ public partial class MainWindow : Window
         _editingSourceId = sourceId;
         var cfg = Config.GetSourceConfig(sourceId);
 
-        EditorDisplayName.Text    = cfg.DisplayName;
-        EditorPreferredApp.Text   = cfg.PreferredApp;
-        EditorProcessName.Text    = cfg.ProcessName;
-        EditorTitleRegex.Text     = cfg.TitleRegex;
-        EditorCachePath.Text      = cfg.CachePath;
-        EditorPollInterval.Text   = cfg.PollIntervalMs.ToString();
+        EditorDisplayName.Text      = cfg.DisplayName;
+        EditorPreferredApp.Text     = cfg.PreferredApp;
+        EditorSmtcTitleRegex.Text   = cfg.SmtcTitleRegex;
+        EditorSmtcArtistRegex.Text  = cfg.SmtcArtistRegex;
+        EditorProcessName.Text      = cfg.ProcessName;
+        EditorTitleRegex.Text       = cfg.TitleRegex;
+        EditorCachePath.Text        = cfg.CachePath;
+        EditorPollInterval.Text     = cfg.PollIntervalMs.ToString();
 
         // Type selector
         foreach (System.Windows.Controls.ComboBoxItem item in EditorType.Items)
@@ -178,14 +180,19 @@ public partial class MainWindow : Window
     private void ApplyEditorTypeVisibility(string type)
     {
         bool isCapture = type == "window_capture";
-        var vis = isCapture ? Visibility.Visible : Visibility.Collapsed;
-        LblProcessName.Visibility = vis; EditorProcessName.Visibility = vis;
-        LblTitleRegex.Visibility  = vis; PanelTitleRegex.Visibility   = vis;
-        LblCoverSource.Visibility = vis; EditorCoverSource.Visibility = vis;
-        LblCachePath.Visibility   = vis; EditorCachePath.Visibility   = vis;
+        var smtcVis    = isCapture ? Visibility.Collapsed : Visibility.Visible;
+        var captureVis = isCapture ? Visibility.Visible   : Visibility.Collapsed;
 
-        PanelPreferredApp.Visibility = isCapture ? Visibility.Collapsed : Visibility.Visible;
-        LblPreferredApp.Visibility   = isCapture ? Visibility.Collapsed : Visibility.Visible;
+        // SMTC-only fields
+        LblPreferredApp.Visibility    = smtcVis; PanelPreferredApp.Visibility    = smtcVis;
+        LblSmtcTitleRegex.Visibility  = smtcVis; PanelSmtcTitleRegex.Visibility  = smtcVis;
+        LblSmtcArtistRegex.Visibility = smtcVis; PanelSmtcArtistRegex.Visibility = smtcVis;
+
+        // WindowCapture-only fields
+        LblProcessName.Visibility = captureVis; EditorProcessName.Visibility = captureVis;
+        LblTitleRegex.Visibility  = captureVis; PanelTitleRegex.Visibility   = captureVis;
+        LblCoverSource.Visibility = captureVis; EditorCoverSource.Visibility = captureVis;
+        LblCachePath.Visibility   = captureVis; EditorCachePath.Visibility   = captureVis;
     }
 
     private void EditorType_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
@@ -199,11 +206,13 @@ public partial class MainWindow : Window
         if (_editingSourceId == null) return;
 
         var cfg = Config.GetSourceConfig(_editingSourceId);
-        cfg.DisplayName  = EditorDisplayName.Text.Trim();
-        cfg.PreferredApp = EditorPreferredApp.Text.Trim();
-        cfg.ProcessName  = EditorProcessName.Text.Trim();
-        cfg.TitleRegex   = EditorTitleRegex.Text.Trim();
-        cfg.CachePath    = EditorCachePath.Text.Trim();
+        cfg.DisplayName      = EditorDisplayName.Text.Trim();
+        cfg.PreferredApp     = EditorPreferredApp.Text.Trim();
+        cfg.SmtcTitleRegex   = EditorSmtcTitleRegex.Text.Trim();
+        cfg.SmtcArtistRegex  = EditorSmtcArtistRegex.Text.Trim();
+        cfg.ProcessName      = EditorProcessName.Text.Trim();
+        cfg.TitleRegex       = EditorTitleRegex.Text.Trim();
+        cfg.CachePath        = EditorCachePath.Text.Trim();
         if (int.TryParse(EditorPollInterval.Text, out var ms)) cfg.PollIntervalMs = ms;
 
         if (EditorType.SelectedItem is System.Windows.Controls.ComboBoxItem typeItem)

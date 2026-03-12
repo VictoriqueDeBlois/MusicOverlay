@@ -40,6 +40,22 @@ public class SourceConfig
     [JsonProperty("preferred_app")]
     public string PreferredApp { get; set; } = "";
 
+    /// <summary>
+    /// Regex applied to the raw SMTC title string.
+    /// Named groups: (?&lt;title&gt;...) and/or (?&lt;artist&gt;...).
+    /// Leave empty to use the raw value.
+    /// </summary>
+    [JsonProperty("smtc_title_regex")]
+    public string SmtcTitleRegex { get; set; } = "";
+
+    /// <summary>
+    /// Regex applied to the raw SMTC artist string.
+    /// Named groups: (?&lt;artist&gt;...) and/or (?&lt;title&gt;...).
+    /// Leave empty to use the raw value.
+    /// </summary>
+    [JsonProperty("smtc_artist_regex")]
+    public string SmtcArtistRegex { get; set; } = "";
+
     // --- WindowCapture options ---
     [JsonProperty("process_name")]
     public string ProcessName { get; set; } = "";
@@ -196,7 +212,7 @@ public class ConfigManager
 
         return cfg.Type switch
         {
-            "smtc" => new SmtcMediaSource(id, cfg.PreferredApp, cfg.PollIntervalMs),
+            "smtc" => new SmtcMediaSource(id, cfg.PreferredApp, cfg.SmtcTitleRegex, cfg.SmtcArtistRegex, cfg.PollIntervalMs),
             "window_capture" => new WindowCaptureSource(
                 id,
                 cfg.ProcessName,
@@ -209,7 +225,7 @@ public class ConfigManager
                     cfg.ScreenshotCrop.Width,
                     cfg.ScreenshotCrop.Height),
                 cfg.PollIntervalMs),
-            _ => new SmtcMediaSource(id, "", cfg.PollIntervalMs)
+            _ => new SmtcMediaSource(id, "", "", "", cfg.PollIntervalMs)
         };
     }
 

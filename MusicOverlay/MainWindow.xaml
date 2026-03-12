@@ -75,6 +75,8 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                   </Grid.RowDefinitions>
 
                   <Label Grid.Row="0" Grid.Column="0" Content="显示名称"/>
@@ -91,32 +93,46 @@
                   <Label Grid.Row="2" Grid.Column="0" x:Name="LblPreferredApp" Content="指定进程名"/>
                   <StackPanel Grid.Row="2" Grid.Column="1" x:Name="PanelPreferredApp" Margin="0,2">
                     <TextBox x:Name="EditorPreferredApp"/>
-                    <TextBlock Text="留空=自动选择当前播放的会话；填写进程名(如 spotify.exe)=固定来源"
+                    <TextBlock Text="留空=自动选择当前播放的会话；桌面应用填进程名(如 spotify.exe)；Store 应用填 AUMID 子串(如 applemusic)"
+                               Foreground="{StaticResource SubFgBrush}" FontSize="11" TextWrapping="Wrap" Margin="0,2"/>
+                  </StackPanel>
+
+                  <Label Grid.Row="3" Grid.Column="0" x:Name="LblSmtcTitleRegex" Content="标题字段正则"/>
+                  <StackPanel Grid.Row="3" Grid.Column="1" x:Name="PanelSmtcTitleRegex" Margin="0,2">
+                    <TextBox x:Name="EditorSmtcTitleRegex"/>
+                    <TextBlock Text="对 SMTC 标题字段应用正则，支持命名组 (?&lt;title&gt;...) 和/或 (?&lt;artist&gt;...)，留空不处理"
+                               Foreground="{StaticResource SubFgBrush}" FontSize="11" TextWrapping="Wrap" Margin="0,2"/>
+                  </StackPanel>
+
+                  <Label Grid.Row="4" Grid.Column="0" x:Name="LblSmtcArtistRegex" Content="艺术家字段正则"/>
+                  <StackPanel Grid.Row="4" Grid.Column="1" x:Name="PanelSmtcArtistRegex" Margin="0,2">
+                    <TextBox x:Name="EditorSmtcArtistRegex"/>
+                    <TextBlock Text="对 SMTC 艺术家字段应用正则，支持命名组 (?&lt;artist&gt;...) 和/或 (?&lt;title&gt;...)，留空不处理"
                                Foreground="{StaticResource SubFgBrush}" FontSize="11" TextWrapping="Wrap" Margin="0,2"/>
                   </StackPanel>
 
                   <!-- WindowCapture fields -->
-                  <Label Grid.Row="3" Grid.Column="0" x:Name="LblProcessName" Content="进程名" Visibility="Collapsed"/>
-                  <TextBox Grid.Row="3" Grid.Column="1" x:Name="EditorProcessName" Margin="0,2" Visibility="Collapsed"/>
+                  <Label Grid.Row="5" Grid.Column="0" x:Name="LblProcessName" Content="进程名" Visibility="Collapsed"/>
+                  <TextBox Grid.Row="5" Grid.Column="1" x:Name="EditorProcessName" Margin="0,2" Visibility="Collapsed"/>
 
-                  <Label Grid.Row="4" Grid.Column="0" x:Name="LblTitleRegex" Content="标题正则" Visibility="Collapsed"/>
-                  <StackPanel Grid.Row="4" Grid.Column="1" x:Name="PanelTitleRegex" Margin="0,2" Visibility="Collapsed">
+                  <Label Grid.Row="6" Grid.Column="0" x:Name="LblTitleRegex" Content="标题正则" Visibility="Collapsed"/>
+                  <StackPanel Grid.Row="6" Grid.Column="1" x:Name="PanelTitleRegex" Margin="0,2" Visibility="Collapsed">
                     <TextBox x:Name="EditorTitleRegex"/>
                     <TextBlock Text="需包含命名组 (?&lt;title&gt;...) 和 (?&lt;artist&gt;...)"
                                Foreground="{StaticResource SubFgBrush}" FontSize="11" Margin="0,2"/>
                   </StackPanel>
 
-                  <Label Grid.Row="5" Grid.Column="0" x:Name="LblCoverSource" Content="封面来源" Visibility="Collapsed"/>
-                  <ComboBox Grid.Row="5" Grid.Column="1" x:Name="EditorCoverSource" Margin="0,2" Visibility="Collapsed">
+                  <Label Grid.Row="7" Grid.Column="0" x:Name="LblCoverSource" Content="封面来源" Visibility="Collapsed"/>
+                  <ComboBox Grid.Row="7" Grid.Column="1" x:Name="EditorCoverSource" Margin="0,2" Visibility="Collapsed">
                     <ComboBoxItem Content="cache"      Tag="cache"/>
                     <ComboBoxItem Content="screenshot" Tag="screenshot"/>
                   </ComboBox>
 
-                  <Label Grid.Row="6" Grid.Column="0" x:Name="LblCachePath" Content="缓存路径" Visibility="Collapsed"/>
-                  <TextBox Grid.Row="6" Grid.Column="1" x:Name="EditorCachePath" Margin="0,2" Visibility="Collapsed"/>
+                  <Label Grid.Row="8" Grid.Column="0" x:Name="LblCachePath" Content="缓存路径" Visibility="Collapsed"/>
+                  <TextBox Grid.Row="8" Grid.Column="1" x:Name="EditorCachePath" Margin="0,2" Visibility="Collapsed"/>
 
-                  <Label Grid.Row="7" Grid.Column="0" Content="轮询间隔 (ms)"/>
-                  <TextBox Grid.Row="7" Grid.Column="1" x:Name="EditorPollInterval" Margin="0,2"/>
+                  <Label Grid.Row="9" Grid.Column="0" Content="轮询间隔 (ms)"/>
+                  <TextBox Grid.Row="9" Grid.Column="1" x:Name="EditorPollInterval" Margin="0,2"/>
                 </Grid>
 
                 <Button Content="保存此源" HorizontalAlignment="Left" Margin="0,12,0,0"
@@ -343,13 +359,12 @@
           <TextBlock Text="OBS 浏览器源地址" FontWeight="SemiBold" Margin="0,0,0,8"/>
           <Border Background="{StaticResource BgBrush}" CornerRadius="6"
                   BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="12">
-            <StackPanel>
-              <TextBlock x:Name="UrlFull"   Margin="0,0,0,4" Foreground="#4fc3f7" Cursor="Hand" MouseLeftButtonUp="OpenUrl"/>
-              <TextBlock x:Name="UrlCover"  Margin="0,0,0,4" Foreground="#4fc3f7" Cursor="Hand" MouseLeftButtonUp="OpenUrl"/>
-              <TextBlock x:Name="UrlTitle"  Margin="0,0,0,4" Foreground="#4fc3f7" Cursor="Hand" MouseLeftButtonUp="OpenUrl"/>
-              <TextBlock x:Name="UrlArtist" Margin="0,0,0,4" Foreground="#4fc3f7" Cursor="Hand" MouseLeftButtonUp="OpenUrl"/>
-              <TextBlock x:Name="UrlApi"    Foreground="#4fc3f7" Cursor="Hand" MouseLeftButtonUp="OpenUrl"/>
-            </StackPanel>
+                        <StackPanel>
+                            <TextBlock x:Name="UrlCover"  Margin="0,0,0,4" Foreground="#4fc3f7" Cursor="Hand" MouseLeftButtonUp="OpenUrl"/>
+                            <TextBlock x:Name="UrlTitle"  Margin="0,0,0,4" Foreground="#4fc3f7" Cursor="Hand" MouseLeftButtonUp="OpenUrl"/>
+                            <TextBlock x:Name="UrlArtist" Margin="0,0,0,4" Foreground="#4fc3f7" Cursor="Hand" MouseLeftButtonUp="OpenUrl"/>
+                            <TextBlock x:Name="UrlApi"    Foreground="#4fc3f7" Cursor="Hand" MouseLeftButtonUp="OpenUrl"/>
+                        </StackPanel>
           </Border>
         </StackPanel>
       </TabItem>
