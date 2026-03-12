@@ -76,7 +76,6 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
                   </Grid.RowDefinitions>
 
                   <Label Grid.Row="0" Grid.Column="0" Content="显示名称"/>
@@ -122,17 +121,11 @@
                                Foreground="{StaticResource SubFgBrush}" FontSize="11" Margin="0,2"/>
                   </StackPanel>
 
-                  <Label Grid.Row="7" Grid.Column="0" x:Name="LblCoverSource" Content="封面来源" Visibility="Collapsed"/>
-                  <ComboBox Grid.Row="7" Grid.Column="1" x:Name="EditorCoverSource" Margin="0,2" Visibility="Collapsed">
-                    <ComboBoxItem Content="cache"      Tag="cache"/>
-                    <ComboBoxItem Content="screenshot" Tag="screenshot"/>
-                  </ComboBox>
+                  <Label Grid.Row="7" Grid.Column="0" x:Name="LblWebDbPath" Content="WebDB 路径" Visibility="Collapsed"/>
+                  <TextBox Grid.Row="7" Grid.Column="1" x:Name="EditorWebDbPath" Margin="0,2" Visibility="Collapsed"/>
 
-                  <Label Grid.Row="8" Grid.Column="0" x:Name="LblCachePath" Content="缓存路径" Visibility="Collapsed"/>
-                  <TextBox Grid.Row="8" Grid.Column="1" x:Name="EditorCachePath" Margin="0,2" Visibility="Collapsed"/>
-
-                  <Label Grid.Row="9" Grid.Column="0" Content="轮询间隔 (ms)"/>
-                  <TextBox Grid.Row="9" Grid.Column="1" x:Name="EditorPollInterval" Margin="0,2"/>
+                  <Label Grid.Row="8" Grid.Column="0" Content="轮询间隔 (ms)"/>
+                  <TextBox Grid.Row="8" Grid.Column="1" x:Name="EditorPollInterval" Margin="0,2"/>
                 </Grid>
 
                 <Button Content="保存此源" HorizontalAlignment="Left" Margin="0,12,0,0"

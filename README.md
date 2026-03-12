@@ -29,10 +29,10 @@ dotnet run --project MusicOverlay
 
 | 路由 | 内容 |
 |------|------|
-| `http://localhost:9090/cover`  | 仅封面 |
-| `http://localhost:9090/title`  | 仅标题 |
-| `http://localhost:9090/artist` | 仅艺术家 |
-| `http://localhost:9090/api/now` | JSON 数据（调试用） |
+| `http://localhost:49090/cover`  | 仅封面 |
+| `http://localhost:49090/title`  | 仅标题 |
+| `http://localhost:49090/artist` | 仅艺术家 |
+| `http://localhost:49090/api/now` | JSON 数据（调试用） |
 
 ## 项目架构
 
@@ -119,9 +119,7 @@ smtc_title_regex: ^(?<artist>.+?) - (?<title>.+)$
   "display_name": "网易云音乐",
   "process_name": "cloudmusic.exe",
   "title_regex": "^(?<title>.+?)\\s*[-–]\\s*(?<artist>.+?)\\s*[-–]\\s*网易云音乐$",
-  "cover_source": "cache",
-  "cache_path": "%AppData%\\Local\\Netease\\CloudMusic\\Cache\\Avatar",
-  "screenshot_crop": { "x": 0.04, "y": 0.10, "width": 0.38, "height": 0.65 },
+  "webdb_path": "%LocalAppData%\\NetEase\\CloudMusic\\Library\\webdb.dat",
   "poll_interval_ms": 2000
 }
 ```
@@ -129,30 +127,14 @@ smtc_title_regex: ^(?<artist>.+?) - (?<title>.+)$
 **字段说明：**
 
 - `title_regex`：从窗口标题提取信息，必须包含命名组 `(?<title>...)` 和 `(?<artist>...)`
-- `cover_source`：`"cache"` = 读本地缓存文件（推荐）；`"screenshot"` = 截窗口裁剪
-- `cache_path`：封面缓存目录，支持 `%AppData%` 等环境变量
-- `screenshot_crop`：截图裁剪区域（0.0~1.0 相对比例），仅 `cover_source=screenshot` 时生效
+- `webdb_path`：网易云 `webdb.dat` 路径（SQLite），读取播放历史中的封面 URL 并下载
 
 ---
 
 ## 网易云封面配置说明
 
-网易云音乐没有 SMTC 支持，封面获取有两种方式：
-
-### 方式一：本地缓存（推荐）
-
-网易云会把封面缓存到本地磁盘，常见路径：
-
-```
-%AppData%\Local\Netease\CloudMusic\Cache\Avatar
-%AppData%\Roaming\Netease\CloudMusic\webdata\file\avatar
-```
-
-建议：播放一首歌后，在资源管理器搜索最近修改的 `.jpg` 文件，找到封面目录后填入 `cache_path`。
-
-### 方式二：窗口截图裁剪
-
-将 `cover_source` 设为 `"screenshot"`，调整 `screenshot_crop` 的 x/y/width/height（0.0~1.0 相对值）裁出封面区域。
+网易云音乐没有 SMTC 支持，封面获取方式为读取 `webdb.dat` 中的播放历史并下载封面 URL。
+如有自定义安装路径，可在 `webdb_path` 中手动指定。
 
 ## 前端模板
 

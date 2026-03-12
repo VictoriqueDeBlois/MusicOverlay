@@ -1,27 +1,132 @@
 {
-  "active_source": "smtc_default",
+  "active_source": "foobar2000",
+  "active_theme": "card",
+  "active_frontend": "default",
   "server_port": 49090,
   "sources": {
-    "smtc_default": {
+    "smtc_system": {
       "type": "smtc",
       "display_name": "系统媒体 (SMTC)",
       "preferred_app": "",
       "poll_interval_ms": 1000
     },
-    "netease": {
+    "netease_cloudmusic": {
       "type": "window_capture",
       "display_name": "网易云音乐",
       "process_name": "cloudmusic.exe",
-      "title_regex": "^(?<title>.+?)\\s*[-–]\\s*(?<artist>.+?)\\s*[-–]\\s*网易云音乐$",
-      "cover_source": "cache",
-      "cache_path": "%AppData%\\Local\\Netease\\CloudMusic\\Cache\\Avatar",
-      "screenshot_crop": {
-        "x": 0.04,
-        "y": 0.10,
-        "width": 0.38,
-        "height": 0.65
+      "title_regex": "^(?<title>.+?)\\s*[-–]\\s*(?<artist>.+?)\\s*$",
+      "webdb_path": "%LocalAppData%\\NetEase\\CloudMusic\\Library\\webdb.dat",
+      "poll_interval_ms": 1000
+    },
+    "foobar2000": {
+      "type": "smtc",
+      "display_name": "Foobar2000",
+      "preferred_app": "foobar2000.exe",
+      "poll_interval_ms": 1000
+    },
+    "apple_music": {
+      "type": "smtc",
+      "display_name": "Apple Music",
+      "preferred_app": "AppleMusic",
+      "poll_interval_ms": 1000
+    },
+    "qq_music": {
+      "type": "smtc",
+      "display_name": "QQ音乐",
+      "preferred_app": "QQMusic",
+      "poll_interval_ms": 1000
+    }
+  },
+  "themes": {
+    "vinyl": {
+      "display_name": "黑胶主题",
+      "preset": "vinyl",
+      "cover": {
+        "size": 200,
+        "shape": "circle",
+        "animation": "rotate",
+        "rotation_speed": 20
       },
-      "poll_interval_ms": 2000
+      "title": {
+        "font": "Microsoft YaHei",
+        "size": 28,
+        "color": "#ffffff",
+        "shadow": true,
+        "marquee": true,
+        "bold": false
+      },
+      "artist": {
+        "font": "Microsoft YaHei",
+        "size": 18,
+        "color": "#aaaaaa",
+        "shadow": true,
+        "marquee": false,
+        "bold": false
+      },
+      "background": {
+        "type": "transparent",
+        "color": "#00000080"
+      }
+    },
+    "card": {
+      "display_name": "卡片主题",
+      "preset": "card",
+      "cover": {
+        "size": 160,
+        "shape": "rounded",
+        "animation": "pulse",
+        "rotation_speed": 0
+      },
+      "title": {
+        "font": "Microsoft YaHei",
+        "size": 26,
+        "color": "#ffffff",
+        "shadow": true,
+        "marquee": true,
+        "bold": true
+      },
+      "artist": {
+        "font": "Microsoft YaHei",
+        "size": 18,
+        "color": "#e0e0e0",
+        "shadow": true,
+        "marquee": false,
+        "bold": false
+      },
+      "background": {
+        "type": "blur_cover",
+        "color": "#00000088"
+      }
+    },
+    "minimal": {
+      "display_name": "简约主题",
+      "preset": "minimal",
+      "cover": {
+        "size": 180,
+        "shape": "rounded",
+        "animation": "none",
+        "rotation_speed": 0
+      },
+      "title": {
+        "font": "Microsoft YaHei",
+        "size": 24,
+        "color": "#ffffff",
+        "shadow": false,
+        "marquee": true,
+        "bold": false
+      },
+      "artist": {
+        "font": "Microsoft YaHei",
+        "size": 16,
+        "color": "#cccccc",
+        "shadow": false,
+        "marquee": false,
+        "bold": false
+      },
+      "background": {
+        "type": "transparent",
+        "color": "#00000000"
+      }
     }
   }
 }

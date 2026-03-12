@@ -1,9 +1,9 @@
 {
-  "preset": "vinyl",
+  "preset": "card",
   "cover": {
     "size": 200,
-    "shape": "circle",
-    "animation": "rotate",
+    "shape": "square",
+    "animation": "none",
     "rotation_speed": 8
   },
   "title": {

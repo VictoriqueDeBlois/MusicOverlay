@@ -10,16 +10,16 @@ namespace MusicOverlay.Config;
 public class AppConfig
 {
     [JsonProperty("active_source")]
-    public string ActiveSource { get; set; } = "smtc_default";
+    public string ActiveSource { get; set; } = "foobar2000";
 
     [JsonProperty("active_theme")]
-    public string ActiveTheme { get; set; } = "vinyl_default";
+    public string ActiveTheme { get; set; } = "card";
 
     [JsonProperty("active_frontend")]
     public string ActiveFrontend { get; set; } = "default";
 
     [JsonProperty("server_port")]
-    public int ServerPort { get; set; } = 9090;
+    public int ServerPort { get; set; } = 49090;
 
     [JsonProperty("sources")]
     public Dictionary<string, JObject> Sources { get; set; } = new();
@@ -68,34 +68,15 @@ public class SourceConfig
     [JsonProperty("title_regex")]
     public string TitleRegex { get; set; } = "";
 
-    /// <summary>"cache" or "screenshot"</summary>
-    [JsonProperty("cover_source")]
-    public string CoverSource { get; set; } = "cache";
-
     /// <summary>
-    /// Absolute or %-variable path to the local cover cache directory.
-    /// Example: "%AppData%\\Local\\Netease\\CloudMusic\\Cache\\Avatar"
+    /// Path to NetEase CloudMusic webdb.dat (SQLite) for historyTracks.
+    /// Example: "%LocalAppData%\\NetEase\\CloudMusic\\Library\\webdb.dat"
     /// </summary>
-    [JsonProperty("cache_path")]
-    public string CachePath { get; set; } = "";
-
-    /// <summary>
-    /// Relative crop region (0.0–1.0) applied when cover_source = "screenshot".
-    /// Tune these values to frame the album art in the target app window.
-    /// </summary>
-    [JsonProperty("screenshot_crop")]
-    public ScreenshotCropConfig ScreenshotCrop { get; set; } = new();
+    [JsonProperty("webdb_path")]
+    public string WebDbPath { get; set; } = @"%LocalAppData%\NetEase\CloudMusic\Library\webdb.dat";
 
     [JsonProperty("poll_interval_ms")]
     public int PollIntervalMs { get; set; } = 1000;
-}
-
-public class ScreenshotCropConfig
-{
-    [JsonProperty("x")]      public double X { get; set; } = 0.0;
-    [JsonProperty("y")]      public double Y { get; set; } = 0.0;
-    [JsonProperty("width")]  public double Width { get; set; } = 1.0;
-    [JsonProperty("height")] public double Height { get; set; } = 1.0;
 }
 
 public class ThemeConfig
@@ -217,13 +198,7 @@ public class ConfigManager
                 id,
                 cfg.ProcessName,
                 cfg.TitleRegex,
-                cfg.CoverSource,
-                cfg.CachePath,
-                new CropRect(
-                    cfg.ScreenshotCrop.X,
-                    cfg.ScreenshotCrop.Y,
-                    cfg.ScreenshotCrop.Width,
-                    cfg.ScreenshotCrop.Height),
+                cfg.WebDbPath,
                 cfg.PollIntervalMs),
             _ => new SmtcMediaSource(id, "", "", "", cfg.PollIntervalMs)
         };
@@ -257,57 +232,75 @@ public class ConfigManager
 
     private static AppConfig BuildDefaultAppConfig() => new()
     {
-        ActiveSource = "smtc_default",
-        ActiveTheme = "vinyl_default",
+        ActiveSource = "foobar2000",
+        ActiveTheme = "card",
         ActiveFrontend = "default",
-        ServerPort   = 9090,
+        ServerPort   = 49090,
         Sources = new Dictionary<string, JObject>
         {
-            ["smtc_default"] = JObject.FromObject(new SourceConfig
+            ["smtc_system"] = JObject.FromObject(new SourceConfig
             {
                 Type        = "smtc",
                 DisplayName = "系统媒体 (SMTC)",
                 PreferredApp = "",
                 PollIntervalMs = 1000
             }),
-            ["netease"] = JObject.FromObject(new SourceConfig
+            ["netease_cloudmusic"] = JObject.FromObject(new SourceConfig
             {
                 Type        = "window_capture",
                 DisplayName = "网易云音乐",
                 ProcessName = "cloudmusic.exe",
                 // Regex: parse "歌曲名 - 艺术家 - 网易云音乐" from window title.
                 // Adjust the suffix pattern if your version uses a different separator.
-                TitleRegex  = @"^(?<title>.+?)\s*[-–]\s*(?<artist>.+?)\s*[-–]\s*网易云音乐$",
-                CoverSource = "cache",
-                // Adjust this path to match your NetEase installation / Windows username.
-                CachePath   = @"%AppData%\Local\Netease\CloudMusic\Cache\Avatar",
-                ScreenshotCrop = new ScreenshotCropConfig { X = 0.04, Y = 0.10, Width = 0.38, Height = 0.65 },
+                TitleRegex  = @"^(?<title>.+?)\s*[-–]\s*(?<artist>.+?)\s*$",
+                WebDbPath   = @"%LocalAppData%\NetEase\CloudMusic\Library\webdb.dat",
                 PollIntervalMs = 2000
+            }),
+            ["foobar2000"] = JObject.FromObject(new SourceConfig
+            {
+                Type        = "smtc",
+                DisplayName = "Foobar2000",
+                PreferredApp = "foobar2000.exe",
+                PollIntervalMs = 1000
+            }),
+            ["apple_music"] = JObject.FromObject(new SourceConfig
+            {
+                Type        = "smtc",
+                DisplayName = "Apple Music",
+                PreferredApp = "AppleMusic",
+                PollIntervalMs = 1000
+            }),
+            ["qq_music"] = JObject.FromObject(new SourceConfig
+            {
+                Type        = "smtc",
+                DisplayName = "QQ音乐",
+                PreferredApp = "QQMusic",
+                PollIntervalMs = 1000
             })
         },
         Themes = new Dictionary<string, JObject>
         {
-            ["vinyl_default"] = JObject.FromObject(new ThemeConfig
+            ["vinyl"] = JObject.FromObject(new ThemeConfig
             {
-                DisplayName = "黑胶旋转",
+                DisplayName = "黑胶主题",
                 Preset = "vinyl",
-                Cover = new CoverTheme { Size = 200, Shape = "circle", Animation = "rotate", RotationSpeed = 8 },
+                Cover = new CoverTheme { Size = 200, Shape = "circle", Animation = "rotate", RotationSpeed = 20 },
                 Title = new TextTheme  { Font = "Microsoft YaHei", Size = 28, Color = "#ffffff", Shadow = true, Marquee = true },
                 Artist = new TextTheme { Font = "Microsoft YaHei", Size = 18, Color = "#aaaaaa", Shadow = true, Marquee = false },
                 Background = new BackgroundTheme { Type = "transparent" }
             }),
-            ["minimal_default"] = JObject.FromObject(new ThemeConfig
+            ["minimal"] = JObject.FromObject(new ThemeConfig
             {
-                DisplayName = "简约风格",
+                DisplayName = "简约主题",
                 Preset = "minimal",
                 Cover = new CoverTheme { Size = 180, Shape = "rounded", Animation = "none", RotationSpeed = 0 },
                 Title = new TextTheme  { Font = "Microsoft YaHei", Size = 24, Color = "#ffffff", Shadow = false, Marquee = true },
                 Artist = new TextTheme { Font = "Microsoft YaHei", Size = 16, Color = "#cccccc", Shadow = false, Marquee = false },
                 Background = new BackgroundTheme { Type = "transparent", Color = "#00000000" }
             }),
-            ["card_default"] = JObject.FromObject(new ThemeConfig
+            ["card"] = JObject.FromObject(new ThemeConfig
             {
-                DisplayName = "卡片风格",
+                DisplayName = "卡片主题",
                 Preset = "card",
                 Cover = new CoverTheme { Size = 160, Shape = "rounded", Animation = "pulse", RotationSpeed = 0 },
                 Title = new TextTheme  { Font = "Microsoft YaHei", Size = 26, Color = "#ffffff", Shadow = true, Marquee = true, Bold = true },

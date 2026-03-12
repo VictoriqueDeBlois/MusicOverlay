@@ -162,16 +162,12 @@ public partial class MainWindow : Window
         EditorSmtcArtistRegex.Text  = cfg.SmtcArtistRegex;
         EditorProcessName.Text      = cfg.ProcessName;
         EditorTitleRegex.Text       = cfg.TitleRegex;
-        EditorCachePath.Text        = cfg.CachePath;
+        EditorWebDbPath.Text        = cfg.WebDbPath;
         EditorPollInterval.Text     = cfg.PollIntervalMs.ToString();
 
         // Type selector
         foreach (System.Windows.Controls.ComboBoxItem item in EditorType.Items)
             if (item.Tag as string == cfg.Type) { EditorType.SelectedItem = item; break; }
-
-        // Cover source selector
-        foreach (System.Windows.Controls.ComboBoxItem item in EditorCoverSource.Items)
-            if (item.Tag as string == cfg.CoverSource) { EditorCoverSource.SelectedItem = item; break; }
 
         ApplyEditorTypeVisibility(cfg.Type);
         SourceEditor.Visibility = Visibility.Visible;
@@ -191,8 +187,14 @@ public partial class MainWindow : Window
         // WindowCapture-only fields
         LblProcessName.Visibility = captureVis; EditorProcessName.Visibility = captureVis;
         LblTitleRegex.Visibility  = captureVis; PanelTitleRegex.Visibility   = captureVis;
-        LblCoverSource.Visibility = captureVis; EditorCoverSource.Visibility = captureVis;
-        LblCachePath.Visibility   = captureVis; EditorCachePath.Visibility   = captureVis;
+        if (!isCapture)
+        {
+            LblWebDbPath.Visibility = Visibility.Collapsed; EditorWebDbPath.Visibility = Visibility.Collapsed;
+        }
+        else
+        {
+            LblWebDbPath.Visibility = Visibility.Visible; EditorWebDbPath.Visibility = Visibility.Visible;
+        }
     }
 
     private void EditorType_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
@@ -212,18 +214,11 @@ public partial class MainWindow : Window
         cfg.SmtcArtistRegex  = EditorSmtcArtistRegex.Text.Trim();
         cfg.ProcessName      = EditorProcessName.Text.Trim();
         cfg.TitleRegex       = EditorTitleRegex.Text.Trim();
-        cfg.CachePath        = EditorCachePath.Text.Trim();
+        cfg.WebDbPath        = EditorWebDbPath.Text.Trim();
         if (int.TryParse(EditorPollInterval.Text, out var ms)) cfg.PollIntervalMs = ms;
 
         if (EditorType.SelectedItem is System.Windows.Controls.ComboBoxItem typeItem)
             cfg.Type = typeItem.Tag as string ?? "smtc";
-        if (EditorCoverSource.SelectedItem is System.Windows.Controls.ComboBoxItem coverItem)
-            cfg.CoverSource = coverItem.Tag as string ?? "cache";
-
-        cfg.ScreenshotCrop = new ScreenshotCropConfig
-        {
-            X = 0.04, Y = 0.10, Width = 0.38, Height = 0.65 // kept from original, editable in sources.json directly
-        };
 
         Config.SetSourceConfig(_editingSourceId, cfg);
         Config.SaveSources();

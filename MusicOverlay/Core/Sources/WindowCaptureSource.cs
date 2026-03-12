@@ -1,11 +1,12 @@
 using System.Diagnostics;
-using System.Drawing;
-using System.Drawing.Imaging;
 using System.IO;
+using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
+using Microsoft.Data.Sqlite;
 using MusicOverlay.Core.Models;
+using Newtonsoft.Json.Linq;
 
 namespace MusicOverlay.Core.Sources;
 
@@ -15,40 +16,39 @@ namespace MusicOverlay.Core.Sources;
 /// Title/Artist: parsed from the window title using a user-configurable regex.
 ///   The regex must contain named groups: (?&lt;title&gt;...) and (?&lt;artist&gt;...)
 ///
-/// Cover image: two strategies selectable via config:
-///   "cache"      - monitors a local cache directory for the newest image file
-///   "screenshot" - captures the app window with PrintWindow and crops a region
-///
-/// Both strategies and their parameters are fully configured in sources.json.
+/// Cover image: read from NetEase webdb.dat (historyTracks) and download via picUrl.
 /// </summary>
 public class WindowCaptureSource : IMediaSource
 {
     // ── Win32 P/Invoke ────────────────────────────────────────────────────────
-    [DllImport("user32.dll")]
-    private static extern bool PrintWindow(IntPtr hwnd, IntPtr hdcBlt, uint nFlags);
-
-    [DllImport("user32.dll")]
-    private static extern bool GetWindowRect(IntPtr hwnd, out RECT lpRect);
-
     [DllImport("user32.dll")]
     private static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
 
     [DllImport("user32.dll")]
     private static extern bool IsWindow(IntPtr hWnd);
 
-    [StructLayout(LayoutKind.Sequential)]
-    private struct RECT { public int Left, Top, Right, Bottom; }
+    [DllImport("user32.dll")]
+    private static extern bool IsWindowVisible(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+    private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
 
     // ── Fields ────────────────────────────────────────────────────────────────
     private readonly string _processName;
     private readonly Regex? _titleRegex;
-    private readonly string _coverSource;       // "cache" or "screenshot"
-    private readonly string _cachePath;
-    private readonly CropRect _screenshotCrop;
+    private readonly string _webDbPath;
     private readonly int _pollIntervalMs;
+    private static readonly HttpClient Http = new();
 
     private CancellationTokenSource? _cts;
     private MediaInfo _lastInfo = new();
+    private string _lastWebDbCoverUrl = string.Empty;
+    private string _lastWebDbCoverBase64 = string.Empty;
 
     public string SourceId { get; }
     public bool IsRunning { get; private set; }
@@ -58,16 +58,12 @@ public class WindowCaptureSource : IMediaSource
         string sourceId,
         string processName,
         string titleRegexPattern,
-        string coverSource,
-        string cachePath,
-        CropRect screenshotCrop,
+        string webDbPath,
         int pollIntervalMs = 2000)
     {
         SourceId = sourceId;
         _processName = processName.Replace(".exe", "", StringComparison.OrdinalIgnoreCase);
-        _coverSource = coverSource;
-        _cachePath = Environment.ExpandEnvironmentVariables(cachePath);
-        _screenshotCrop = screenshotCrop;
+        _webDbPath = Environment.ExpandEnvironmentVariables(webDbPath);
         _pollIntervalMs = Math.Max(500, pollIntervalMs);
 
         if (!string.IsNullOrWhiteSpace(titleRegexPattern))
@@ -126,11 +122,11 @@ public class WindowCaptureSource : IMediaSource
         if (procs.Length == 0) return info;
 
         var proc = procs[0];
-        var hwnd = proc.MainWindowHandle;
+        var hwnd = FindBestWindowHandle(proc.Id, _titleRegex);
         if (hwnd == IntPtr.Zero || !IsWindow(hwnd)) return info;
 
         // --- Parse title / artist from window title ---
-        var windowTitle = proc.MainWindowTitle;
+        var windowTitle = GetWindowTitle(hwnd);
         if (_titleRegex != null && !string.IsNullOrWhiteSpace(windowTitle))
         {
             var m = _titleRegex.Match(windowTitle);
@@ -143,35 +139,109 @@ public class WindowCaptureSource : IMediaSource
         }
 
         // --- Cover image ---
-        info.CoverBase64 = _coverSource == "cache"
-            ? GetCoverFromCache()
-            : GetCoverFromScreenshot(hwnd);
+        info.CoverBase64 = GetCoverFromWebDb();
 
         return info;
     }
 
-    /// <summary>
-    /// Finds the newest image file in the configured cache directory.
-    /// NetEase writes the current cover to its local cache; we grab the most-recently-modified one.
-    /// The exact subfolder and filename pattern can be tuned in sources.json (cache_path).
-    /// </summary>
-    private string GetCoverFromCache()
+    private static IntPtr FindBestWindowHandle(int processId, Regex? titleRegex)
     {
-        if (string.IsNullOrWhiteSpace(_cachePath) || !Directory.Exists(_cachePath))
-            return string.Empty;
+        IntPtr bestMatch = IntPtr.Zero;
+        IntPtr anyVisible = IntPtr.Zero;
 
+        EnumWindows((hWnd, _) =>
+        {
+            if (!IsWindowVisible(hWnd)) return true;
+
+            GetWindowThreadProcessId(hWnd, out var pid);
+            if (pid != processId) return true;
+
+            var title = GetWindowTitle(hWnd);
+            if (string.IsNullOrWhiteSpace(title)) return true;
+
+            if (titleRegex != null && titleRegex.IsMatch(title))
+            {
+                bestMatch = hWnd;
+                return false; // stop
+            }
+
+            if (anyVisible == IntPtr.Zero)
+                anyVisible = hWnd;
+
+            return true;
+        }, IntPtr.Zero);
+
+        return bestMatch != IntPtr.Zero ? bestMatch : anyVisible;
+    }
+
+    private static string GetWindowTitle(IntPtr hWnd)
+    {
+        var sb = new StringBuilder(512);
+        var len = GetWindowText(hWnd, sb, sb.Capacity);
+        return len > 0 ? sb.ToString() : string.Empty;
+    }
+
+    /// <summary>
+    /// Reads the latest played track from NetEase CloudMusic webdb.dat (historyTracks)
+    /// and downloads the album cover via picUrl.
+    /// </summary>
+    private string GetCoverFromWebDb()
+    {
         try
         {
-            var extensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
-            var newest = Directory
-                .EnumerateFiles(_cachePath, "*", SearchOption.AllDirectories)
-                .Where(f => extensions.Contains(Path.GetExtension(f).ToLowerInvariant()))
-                .OrderByDescending(File.GetLastWriteTime)
-                .FirstOrDefault();
+            var path = _webDbPath;
+            if (string.IsNullOrWhiteSpace(path))
+                path = @"%LocalAppData%\NetEase\CloudMusic\Library\webdb.dat";
 
-            if (newest == null) return string.Empty;
-            var bytes = File.ReadAllBytes(newest);
-            return Convert.ToBase64String(bytes);
+            path = Environment.ExpandEnvironmentVariables(path);
+            if (!File.Exists(path)) return string.Empty;
+
+            var connStr = new SqliteConnectionStringBuilder
+            {
+                DataSource = path,
+                Mode = SqliteOpenMode.ReadOnly,
+                Cache = SqliteCacheMode.Shared
+            }.ToString();
+
+            using var conn = new SqliteConnection(connStr);
+            conn.Open();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "SELECT playtime, jsonStr FROM historyTracks ORDER BY playtime DESC LIMIT 5";
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                var jsonStr = reader.GetString(1);
+                var url = ExtractCoverUrl(jsonStr);
+                if (string.IsNullOrWhiteSpace(url)) continue;
+
+                if (url == _lastWebDbCoverUrl && _lastWebDbCoverBase64.Length > 0)
+                    return _lastWebDbCoverBase64;
+
+                var finalUrl = EnsureCoverParam(url);
+                var bytes = Http.GetByteArrayAsync(finalUrl).GetAwaiter().GetResult();
+                var base64 = Convert.ToBase64String(bytes);
+                _lastWebDbCoverUrl = url;
+                _lastWebDbCoverBase64 = base64;
+                return base64;
+            }
+        }
+        catch
+        {
+            return string.Empty;
+        }
+        return string.Empty;
+    }
+
+    private static string ExtractCoverUrl(string jsonStr)
+    {
+        try
+        {
+            var obj = JObject.Parse(jsonStr);
+            var url =
+                obj.SelectToken("album.picUrl")?.ToString() ??
+                obj.SelectToken("al.picUrl")?.ToString() ??
+                obj.SelectToken("picUrl")?.ToString();
+            return url ?? string.Empty;
         }
         catch
         {
@@ -179,47 +249,13 @@ public class WindowCaptureSource : IMediaSource
         }
     }
 
-    /// <summary>
-    /// Captures the app window using PrintWindow (works even when minimized / behind other windows),
-    /// then crops the region specified in sources.json (screenshot_crop) as relative fractions.
-    /// Adjust crop values in config to frame the album art precisely for your window size.
-    /// </summary>
-    private string GetCoverFromScreenshot(IntPtr hwnd)
+    private static string EnsureCoverParam(string url)
     {
-        try
-        {
-            GetWindowRect(hwnd, out var rect);
-            int w = rect.Right - rect.Left;
-            int h = rect.Bottom - rect.Top;
-            if (w <= 0 || h <= 0) return string.Empty;
-
-            using var bmp = new Bitmap(w, h, PixelFormat.Format32bppArgb);
-            using var g = Graphics.FromImage(bmp);
-            IntPtr hdc = g.GetHdc();
-            PrintWindow(hwnd, hdc, 2); // PW_RENDERFULLCONTENT = 2
-            g.ReleaseHdc(hdc);
-
-            // Crop using relative fractions from config
-            int cx = (int)(w * _screenshotCrop.X);
-            int cy = (int)(h * _screenshotCrop.Y);
-            int cw = (int)(w * _screenshotCrop.Width);
-            int ch = (int)(h * _screenshotCrop.Height);
-            cw = Math.Max(1, Math.Min(cw, w - cx));
-            ch = Math.Max(1, Math.Min(ch, h - cy));
-
-            using var cropped = bmp.Clone(new Rectangle(cx, cy, cw, ch), PixelFormat.Format32bppArgb);
-            using var ms = new MemoryStream();
-            cropped.Save(ms, ImageFormat.Jpeg);
-            return Convert.ToBase64String(ms.ToArray());
-        }
-        catch
-        {
-            return string.Empty;
-        }
+        if (string.IsNullOrWhiteSpace(url)) return url;
+        if (url.Contains("param=", StringComparison.OrdinalIgnoreCase)) return url;
+        var sep = url.Contains('?') ? "&" : "?";
+        return $"{url}{sep}param=600y600";
     }
 
     public void Dispose() => Stop();
 }
-
-/// <summary>Relative crop rectangle (values 0.0 – 1.0).</summary>
-public record CropRect(double X, double Y, double Width, double Height);
