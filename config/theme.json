@@ -22,6 +22,14 @@
     "marquee": false,
     "bold": false
   },
+  "album": {
+    "font": "Microsoft YaHei",
+    "size": 16,
+    "color": "#aaaaaa",
+    "shadow": true,
+    "marquee": false,
+    "bold": false
+  },
   "background": {
     "type": "transparent",
     "color": "#00000080"

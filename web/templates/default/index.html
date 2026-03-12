@@ -22,6 +22,11 @@
     --artist-color:  #aaaaaa;
     --artist-shadow: 0 2px 8px rgba(0,0,0,0.8);
     --artist-weight: normal;
+    --album-font:    "Microsoft YaHei", sans-serif;
+    --album-size:    16px;
+    --album-color:   #aaaaaa;
+    --album-shadow:  0 2px 8px rgba(0,0,0,0.8);
+    --album-weight:  normal;
     --bg:            transparent;
   }
 
@@ -96,7 +101,7 @@
     gap: 8px;
   }
 
-  .title-wrap, .artist-wrap {
+  .title-wrap, .artist-wrap, .album-wrap {
     overflow: hidden;
     white-space: nowrap;
   }
@@ -116,6 +121,15 @@
     color:       var(--artist-color);
     text-shadow: var(--artist-shadow);
     font-weight: var(--artist-weight);
+    display: inline-block;
+  }
+
+  #album-text {
+    font-family: var(--album-font);
+    font-size:   var(--album-size);
+    color:       var(--album-color);
+    text-shadow: var(--album-shadow);
+    font-weight: var(--album-weight);
     display: inline-block;
   }
 
@@ -161,10 +175,11 @@
   <div class="cover-wrap" id="cover-wrap">
     <img id="cover-img" src="" alt="cover">
   </div>
-  <div class="text-block">
-    <div class="title-wrap"><span id="title-text">等待音乐...</span></div>
-    <div class="artist-wrap"><span id="artist-text"></span></div>
-  </div>
+    <div class="text-block">
+      <div class="title-wrap"><span id="title-text">等待音乐...</span></div>
+      <div class="artist-wrap"><span id="artist-text"></span></div>
+      <div class="album-wrap"><span id="album-text"></span></div>
+    </div>
 </div>
 
 <script>
@@ -172,6 +187,7 @@
   const coverImg   = document.getElementById('cover-img');
   const titleText  = document.getElementById('title-text');
   const artistText = document.getElementById('artist-text');
+  const albumText  = document.getElementById('album-text');
 
   initOverlay({
     onMedia(data) {
@@ -196,16 +212,20 @@
 
       titleText.textContent  = data.title  || '';
       artistText.textContent = data.artist || '';
+      albumText.textContent  = data.album  || '';
 
       setPlayState(data.isPlaying);
       requestAnimationFrame(() => {
         setupMarquee(titleText);
         setupMarquee(artistText);
+        setupMarquee(albumText);
         // compute marquee offset based on actual text vs container width
         const tw = titleText.scrollWidth - titleText.parentElement.clientWidth;
         titleText.style.setProperty('--marquee-offset', `-${tw}px`);
         const aw = artistText.scrollWidth - artistText.parentElement.clientWidth;
         artistText.style.setProperty('--marquee-offset', `-${aw}px`);
+        const albw = albumText.scrollWidth - albumText.parentElement.clientWidth;
+        albumText.style.setProperty('--marquee-offset', `-${albw}px`);
       });
     }
   });

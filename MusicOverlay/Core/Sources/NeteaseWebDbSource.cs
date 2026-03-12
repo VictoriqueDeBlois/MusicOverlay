@@ -46,6 +46,7 @@ public class NeteaseWebDbSource : IMediaSource
     private MediaInfo _lastInfo = new();
     private string _lastWebDbCoverUrl = string.Empty;
     private string _lastWebDbCoverBase64 = string.Empty;
+    private string _lastWebDbAlbumName = string.Empty;
 
     public string SourceId { get; }
     public bool IsRunning { get; private set; }
@@ -122,21 +123,27 @@ public class NeteaseWebDbSource : IMediaSource
         var hwnd = FindBestWindowHandle(proc.Id, _titleRegex);
         if (hwnd == IntPtr.Zero || !IsWindow(hwnd)) return info;
 
-        // --- Parse title / artist from window title ---
+        // --- Parse title / artist / album from window title ---
         var windowTitle = GetWindowTitle(hwnd);
         if (_titleRegex != null && !string.IsNullOrWhiteSpace(windowTitle))
         {
             var m = _titleRegex.Match(windowTitle);
             if (m.Success)
             {
-                info.Title = m.Groups["title"].Value.Trim();
-                info.Artist = m.Groups["artist"].Value.Trim();
+                if (m.Groups["title"].Success)
+                    info.Title = m.Groups["title"].Value.Trim();
+                if (m.Groups["artist"].Success)
+                    info.Artist = m.Groups["artist"].Value.Trim();
+                if (m.Groups["album"].Success)
+                    info.Album = m.Groups["album"].Value.Trim();
                 info.IsPlaying = true;
             }
         }
 
-        // --- Cover image ---
-        info.CoverBase64 = GetCoverFromWebDb();
+        // --- Cover image + album fallback from WebDB ---
+        info.CoverBase64 = GetCoverFromWebDb(out var albumName);
+        if (string.IsNullOrWhiteSpace(info.Album) && !string.IsNullOrWhiteSpace(albumName))
+            info.Album = albumName;
 
         return info;
     }
@@ -182,8 +189,9 @@ public class NeteaseWebDbSource : IMediaSource
     /// Reads the latest played track from NetEase CloudMusic webdb.dat (historyTracks)
     /// and downloads the album cover via picUrl.
     /// </summary>
-    private string GetCoverFromWebDb()
+    private string GetCoverFromWebDb(out string albumName)
     {
+        albumName = string.Empty;
         try
         {
             var path = _webDbPath;
@@ -208,17 +216,26 @@ public class NeteaseWebDbSource : IMediaSource
             while (reader.Read())
             {
                 var jsonStr = reader.GetString(1);
+                var album = ExtractAlbumName(jsonStr);
+                if (!string.IsNullOrWhiteSpace(album))
+                    albumName = album;
                 var url = ExtractCoverUrl(jsonStr);
                 if (string.IsNullOrWhiteSpace(url)) continue;
 
                 if (url == _lastWebDbCoverUrl && _lastWebDbCoverBase64.Length > 0)
+                {
+                    if (string.IsNullOrWhiteSpace(albumName))
+                        albumName = _lastWebDbAlbumName;
                     return _lastWebDbCoverBase64;
+                }
 
                 var finalUrl = EnsureCoverParam(url);
                 var bytes = Http.GetByteArrayAsync(finalUrl).GetAwaiter().GetResult();
                 var base64 = Convert.ToBase64String(bytes);
                 _lastWebDbCoverUrl = url;
                 _lastWebDbCoverBase64 = base64;
+                if (!string.IsNullOrWhiteSpace(albumName))
+                    _lastWebDbAlbumName = albumName;
                 return base64;
             }
         }
@@ -239,6 +256,22 @@ public class NeteaseWebDbSource : IMediaSource
                 obj.SelectToken("al.picUrl")?.ToString() ??
                 obj.SelectToken("picUrl")?.ToString();
             return url ?? string.Empty;
+        }
+        catch
+        {
+            return string.Empty;
+        }
+    }
+
+    private static string ExtractAlbumName(string jsonStr)
+    {
+        try
+        {
+            var obj = JObject.Parse(jsonStr);
+            var name =
+                obj.SelectToken("album.name")?.ToString() ??
+                obj.SelectToken("al.name")?.ToString();
+            return name ?? string.Empty;
         }
         catch
         {

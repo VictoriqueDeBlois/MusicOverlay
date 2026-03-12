@@ -8,6 +8,10 @@
       "type": "smtc",
       "display_name": "系统媒体 (SMTC)",
       "preferred_app": "",
+      "smtc_title_regex": "",
+      "smtc_artist_regex": "",
+      "smtc_album_regex": "",
+      "title_regex": "",
       "poll_interval_ms": 1000
     },
     "netease_cloudmusic": {
@@ -22,18 +26,30 @@
       "type": "smtc",
       "display_name": "Foobar2000",
       "preferred_app": "foobar2000.exe",
+      "smtc_title_regex": "",
+      "smtc_artist_regex": "",
+      "smtc_album_regex": "",
+      "title_regex": "",
       "poll_interval_ms": 1000
     },
     "apple_music": {
       "type": "smtc",
       "display_name": "Apple Music",
       "preferred_app": "AppleMusic",
+      "smtc_title_regex": "",
+      "smtc_artist_regex": "",
+      "smtc_album_regex": "",
+      "title_regex": "",
       "poll_interval_ms": 1000
     },
     "qq_music": {
       "type": "smtc",
       "display_name": "QQ音乐",
       "preferred_app": "QQMusic",
+      "smtc_title_regex": "",
+      "smtc_artist_regex": "",
+      "smtc_album_regex": "",
+      "title_regex": "",
       "poll_interval_ms": 1000
     }
   },
@@ -58,6 +74,14 @@
       "artist": {
         "font": "Microsoft YaHei",
         "size": 18,
+        "color": "#aaaaaa",
+        "shadow": true,
+        "marquee": false,
+        "bold": false
+      },
+      "album": {
+        "font": "Microsoft YaHei",
+        "size": 16,
         "color": "#aaaaaa",
         "shadow": true,
         "marquee": false,
@@ -93,6 +117,14 @@
         "marquee": false,
         "bold": false
       },
+      "album": {
+        "font": "Microsoft YaHei",
+        "size": 16,
+        "color": "#e0e0e0",
+        "shadow": true,
+        "marquee": false,
+        "bold": false
+      },
       "background": {
         "type": "blur_cover",
         "color": "#00000088"
@@ -118,6 +150,14 @@
       "artist": {
         "font": "Microsoft YaHei",
         "size": 16,
+        "color": "#cccccc",
+        "shadow": false,
+        "marquee": false,
+        "bold": false
+      },
+      "album": {
+        "font": "Microsoft YaHei",
+        "size": 14,
         "color": "#cccccc",
         "shadow": false,
         "marquee": false,

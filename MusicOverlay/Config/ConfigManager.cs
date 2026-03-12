@@ -42,7 +42,7 @@ public class SourceConfig
 
     /// <summary>
     /// Regex applied to the raw SMTC title string.
-    /// Named groups: (?&lt;title&gt;...) and/or (?&lt;artist&gt;...).
+    /// Named groups: (?&lt;title&gt;...), (?&lt;artist&gt;...), and/or (?&lt;album&gt;...).
     /// Leave empty to use the raw value.
     /// </summary>
     [JsonProperty("smtc_title_regex")]
@@ -50,20 +50,28 @@ public class SourceConfig
 
     /// <summary>
     /// Regex applied to the raw SMTC artist string.
-    /// Named groups: (?&lt;artist&gt;...) and/or (?&lt;title&gt;...).
+    /// Named groups: (?&lt;artist&gt;...), (?&lt;title&gt;...), and/or (?&lt;album&gt;...).
     /// Leave empty to use the raw value.
     /// </summary>
     [JsonProperty("smtc_artist_regex")]
     public string SmtcArtistRegex { get; set; } = "";
 
-    // --- WindowCapture options ---
+    /// <summary>
+    /// Regex applied to the raw SMTC album string.
+    /// Named groups: (?&lt;album&gt;...), (?&lt;title&gt;...), and/or (?&lt;artist&gt;...).
+    /// Leave empty to use the raw value.
+    /// </summary>
+    [JsonProperty("smtc_album_regex")]
+    public string SmtcAlbumRegex { get; set; } = "";
+
+    // --- NetEase WebDB options ---
     [JsonProperty("process_name")]
     public string ProcessName { get; set; } = "";
 
     /// <summary>
-    /// Regex to parse title and artist from the window title.
-    /// Must contain named groups (?&lt;title&gt;...) and (?&lt;artist&gt;...).
-    /// Example for NetEase: "^(?&lt;title&gt;.+?)\\s*[-–]\\s*(?&lt;artist&gt;.+?)\\s*[-–]\\s*网易云音乐$"
+    /// Regex to parse title/artist/album from the window title.
+    /// Named groups: (?&lt;title&gt;...), (?&lt;artist&gt;...), and/or (?&lt;album&gt;...).
+    /// Example for NetEase: "^(?&lt;title&gt;.+?)\\s*[-–]\\s*(?&lt;artist&gt;.+?)\\s*$"
     /// </summary>
     [JsonProperty("title_regex")]
     public string TitleRegex { get; set; } = "";
@@ -95,6 +103,9 @@ public class ThemeConfig
 
     [JsonProperty("artist")]
     public TextTheme Artist { get; set; } = new();
+
+    [JsonProperty("album")]
+    public TextTheme Album { get; set; } = new();
 
     [JsonProperty("background")]
     public BackgroundTheme Background { get; set; } = new();
@@ -193,7 +204,14 @@ public class ConfigManager
 
         return cfg.Type switch
         {
-            "smtc" => new SmtcMediaSource(id, cfg.PreferredApp, cfg.SmtcTitleRegex, cfg.SmtcArtistRegex, cfg.PollIntervalMs),
+            "smtc" => new SmtcMediaSource(
+                id,
+                cfg.PreferredApp,
+                cfg.SmtcTitleRegex,
+                cfg.SmtcArtistRegex,
+                cfg.SmtcAlbumRegex,
+                cfg.TitleRegex,
+                cfg.PollIntervalMs),
             "netease_webdb" => new NeteaseWebDbSource(
                 id,
                 cfg.ProcessName,
@@ -206,7 +224,7 @@ public class ConfigManager
                 cfg.TitleRegex,
                 cfg.WebDbPath,
                 cfg.PollIntervalMs),
-            _ => new SmtcMediaSource(id, "", "", "", cfg.PollIntervalMs)
+            _ => new SmtcMediaSource(id, "", "", "", "", "", cfg.PollIntervalMs)
         };
     }
 
@@ -293,6 +311,7 @@ public class ConfigManager
                 Cover = new CoverTheme { Size = 200, Shape = "circle", Animation = "rotate", RotationSpeed = 20 },
                 Title = new TextTheme  { Font = "Microsoft YaHei", Size = 28, Color = "#ffffff", Shadow = true, Marquee = true },
                 Artist = new TextTheme { Font = "Microsoft YaHei", Size = 18, Color = "#aaaaaa", Shadow = true, Marquee = false },
+                Album = new TextTheme  { Font = "Microsoft YaHei", Size = 16, Color = "#aaaaaa", Shadow = true, Marquee = false },
                 Background = new BackgroundTheme { Type = "transparent" }
             }),
             ["minimal"] = JObject.FromObject(new ThemeConfig
@@ -302,6 +321,7 @@ public class ConfigManager
                 Cover = new CoverTheme { Size = 180, Shape = "rounded", Animation = "none", RotationSpeed = 0 },
                 Title = new TextTheme  { Font = "Microsoft YaHei", Size = 24, Color = "#ffffff", Shadow = false, Marquee = true },
                 Artist = new TextTheme { Font = "Microsoft YaHei", Size = 16, Color = "#cccccc", Shadow = false, Marquee = false },
+                Album = new TextTheme  { Font = "Microsoft YaHei", Size = 14, Color = "#cccccc", Shadow = false, Marquee = false },
                 Background = new BackgroundTheme { Type = "transparent", Color = "#00000000" }
             }),
             ["card"] = JObject.FromObject(new ThemeConfig
@@ -311,6 +331,7 @@ public class ConfigManager
                 Cover = new CoverTheme { Size = 160, Shape = "rounded", Animation = "pulse", RotationSpeed = 0 },
                 Title = new TextTheme  { Font = "Microsoft YaHei", Size = 26, Color = "#ffffff", Shadow = true, Marquee = true, Bold = true },
                 Artist = new TextTheme { Font = "Microsoft YaHei", Size = 18, Color = "#e0e0e0", Shadow = true, Marquee = false },
+                Album = new TextTheme  { Font = "Microsoft YaHei", Size = 16, Color = "#e0e0e0", Shadow = true, Marquee = false },
                 Background = new BackgroundTheme { Type = "blur_cover", Color = "#00000088" }
             })
         }

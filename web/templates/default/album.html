@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>Album Overlay</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --album-font:   "Microsoft YaHei", sans-serif;
+    --album-size:   18px;
+    --album-color:  #aaaaaa;
+    --album-shadow: 0 2px 8px rgba(0,0,0,0.8);
+    --album-weight: normal;
+    --bg:           transparent;
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--bg);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+  }
+
+  .album-wrap {
+    overflow: hidden;
+    white-space: nowrap;
+    width: 100%;
+    padding: 4px 8px;
+  }
+
+  #album-text {
+    font-family: var(--album-font);
+    font-size:   var(--album-size);
+    color:       var(--album-color);
+    text-shadow: var(--album-shadow);
+    font-weight: var(--album-weight);
+    display: inline-block;
+  }
+
+  @keyframes marquee {
+    0%,20%  { transform: translateX(0); }
+    80%,100% { transform: translateX(var(--marquee-offset, -50%)); }
+  }
+  .marquee { animation: marquee 8s ease-in-out infinite; }
+</style>
+<link rel="stylesheet" href="/custom/user.css" onerror="this.remove()">
+<script src="/overlay.js"></script>
+</head>
+<body>
+<div class="album-wrap">
+  <span id="album-text"></span>
+</div>
+
+<script>
+  const albumText = document.getElementById('album-text');
+
+  initOverlay({
+    onMedia(data) {
+      applyTheme(data.theme);
+      albumText.textContent = data.album || '';
+      requestAnimationFrame(() => {
+        setupMarquee(albumText);
+        const offset = albumText.scrollWidth - albumText.parentElement.clientWidth;
+        albumText.style.setProperty('--marquee-offset', `-${offset}px`);
+      });
+    }
+  });
+</script>
+</body>
+</html>

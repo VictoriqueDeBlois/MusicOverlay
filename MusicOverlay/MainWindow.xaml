@@ -75,6 +75,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                   </Grid.RowDefinitions>
 
                   <Label Grid.Row="0" Grid.Column="0" Content="显示名称"/>
@@ -98,33 +99,40 @@
                   <Label Grid.Row="3" Grid.Column="0" x:Name="LblSmtcTitleRegex" Content="标题字段正则"/>
                   <StackPanel Grid.Row="3" Grid.Column="1" x:Name="PanelSmtcTitleRegex" Margin="0,2">
                     <TextBox x:Name="EditorSmtcTitleRegex"/>
-                    <TextBlock Text="对 SMTC 标题字段应用正则，支持命名组 (?&lt;title&gt;...) 和/或 (?&lt;artist&gt;...)，留空不处理"
+                    <TextBlock Text="对 SMTC 标题字段应用正则，支持命名组 (?&lt;title&gt;...) / (?&lt;artist&gt;...) / (?&lt;album&gt;...)，留空不处理"
                                Foreground="{StaticResource SubFgBrush}" FontSize="11" TextWrapping="Wrap" Margin="0,2"/>
                   </StackPanel>
 
                   <Label Grid.Row="4" Grid.Column="0" x:Name="LblSmtcArtistRegex" Content="艺术家字段正则"/>
                   <StackPanel Grid.Row="4" Grid.Column="1" x:Name="PanelSmtcArtistRegex" Margin="0,2">
                     <TextBox x:Name="EditorSmtcArtistRegex"/>
-                    <TextBlock Text="对 SMTC 艺术家字段应用正则，支持命名组 (?&lt;artist&gt;...) 和/或 (?&lt;title&gt;...)，留空不处理"
+                    <TextBlock Text="对 SMTC 艺术家字段应用正则，支持命名组 (?&lt;artist&gt;...) / (?&lt;title&gt;...) / (?&lt;album&gt;...)，留空不处理"
+                               Foreground="{StaticResource SubFgBrush}" FontSize="11" TextWrapping="Wrap" Margin="0,2"/>
+                  </StackPanel>
+
+                  <Label Grid.Row="5" Grid.Column="0" x:Name="LblSmtcAlbumRegex" Content="专辑字段正则"/>
+                  <StackPanel Grid.Row="5" Grid.Column="1" x:Name="PanelSmtcAlbumRegex" Margin="0,2">
+                    <TextBox x:Name="EditorSmtcAlbumRegex"/>
+                    <TextBlock Text="对 SMTC 专辑字段应用正则，支持命名组 (?&lt;album&gt;...) / (?&lt;title&gt;...) / (?&lt;artist&gt;...)，留空不处理"
                                Foreground="{StaticResource SubFgBrush}" FontSize="11" TextWrapping="Wrap" Margin="0,2"/>
                   </StackPanel>
 
                   <!-- WindowCapture fields -->
-                  <Label Grid.Row="5" Grid.Column="0" x:Name="LblProcessName" Content="进程名" Visibility="Collapsed"/>
-                  <TextBox Grid.Row="5" Grid.Column="1" x:Name="EditorProcessName" Margin="0,2" Visibility="Collapsed"/>
+                  <Label Grid.Row="6" Grid.Column="0" x:Name="LblProcessName" Content="进程名" Visibility="Collapsed"/>
+                  <TextBox Grid.Row="6" Grid.Column="1" x:Name="EditorProcessName" Margin="0,2" Visibility="Collapsed"/>
 
-                  <Label Grid.Row="6" Grid.Column="0" x:Name="LblTitleRegex" Content="标题正则" Visibility="Collapsed"/>
-                  <StackPanel Grid.Row="6" Grid.Column="1" x:Name="PanelTitleRegex" Margin="0,2" Visibility="Collapsed">
+                  <Label Grid.Row="7" Grid.Column="0" x:Name="LblTitleRegex" Content="窗口标题正则" Visibility="Collapsed"/>
+                  <StackPanel Grid.Row="7" Grid.Column="1" x:Name="PanelTitleRegex" Margin="0,2" Visibility="Collapsed">
                     <TextBox x:Name="EditorTitleRegex"/>
-                    <TextBlock Text="需包含命名组 (?&lt;title&gt;...) 和 (?&lt;artist&gt;...)"
+                    <TextBlock Text="支持命名组 (?&lt;title&gt;...) / (?&lt;artist&gt;...) / (?&lt;album&gt;...)"
                                Foreground="{StaticResource SubFgBrush}" FontSize="11" Margin="0,2"/>
                   </StackPanel>
 
-                  <Label Grid.Row="7" Grid.Column="0" x:Name="LblWebDbPath" Content="WebDB 路径" Visibility="Collapsed"/>
-                  <TextBox Grid.Row="7" Grid.Column="1" x:Name="EditorWebDbPath" Margin="0,2" Visibility="Collapsed"/>
+                  <Label Grid.Row="8" Grid.Column="0" x:Name="LblWebDbPath" Content="WebDB 路径" Visibility="Collapsed"/>
+                  <TextBox Grid.Row="8" Grid.Column="1" x:Name="EditorWebDbPath" Margin="0,2" Visibility="Collapsed"/>
 
-                  <Label Grid.Row="8" Grid.Column="0" Content="轮询间隔 (ms)"/>
-                  <TextBox Grid.Row="8" Grid.Column="1" x:Name="EditorPollInterval" Margin="0,2"/>
+                  <Label Grid.Row="9" Grid.Column="0" Content="轮询间隔 (ms)"/>
+                  <TextBox Grid.Row="9" Grid.Column="1" x:Name="EditorPollInterval" Margin="0,2"/>
                 </Grid>
 
                 <Button Content="保存此源" HorizontalAlignment="Left" Margin="0,12,0,0"
@@ -279,6 +287,36 @@
               </Grid>
             </Border>
 
+            <!-- Album settings -->
+            <TextBlock Text="专辑文字" FontWeight="SemiBold" Margin="0,0,0,6"/>
+            <Border Background="{StaticResource BgBrush}" CornerRadius="6"
+                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="10" Margin="0,0,0,12">
+              <Grid>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="120"/>
+                  <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="Auto"/>
+                  <RowDefinition Height="Auto"/>
+                  <RowDefinition Height="Auto"/>
+                  <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Label Grid.Row="0" Grid.Column="0" Content="字体"/>
+                <TextBox Grid.Row="0" Grid.Column="1" x:Name="AlbumFont" Margin="0,2"/>
+                <Label Grid.Row="1" Grid.Column="0" Content="字号 (px)"/>
+                <TextBox Grid.Row="1" Grid.Column="1" x:Name="AlbumSize" Margin="0,2"/>
+                <Label Grid.Row="2" Grid.Column="0" Content="颜色 (hex)"/>
+                <TextBox Grid.Row="2" Grid.Column="1" x:Name="AlbumColor" Margin="0,2"/>
+                <Label Grid.Row="3" Grid.Column="0" Content="选项"/>
+                <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal">
+                  <CheckBox x:Name="AlbumShadow"  Content="阴影"    Margin="0,0,12,0" Foreground="{StaticResource FgBrush}"/>
+                  <CheckBox x:Name="AlbumMarquee" Content="滚动字幕" Foreground="{StaticResource FgBrush}"/>
+                  <CheckBox x:Name="AlbumBold"    Content="加粗"    Margin="12,0,0,0" Foreground="{StaticResource FgBrush}"/>
+                </StackPanel>
+              </Grid>
+            </Border>
+
             <!-- Background -->
             <TextBlock Text="背景" FontWeight="SemiBold" Margin="0,0,0,6"/>
             <Border Background="{StaticResource BgBrush}" CornerRadius="6"
@@ -337,6 +375,10 @@
                 <TextBlock x:Name="StatusArtist" Foreground="{StaticResource FgBrush}"/>
               </StackPanel>
               <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                <TextBlock Text="专辑: " Foreground="{StaticResource SubFgBrush}"/>
+                <TextBlock x:Name="StatusAlbum" Foreground="{StaticResource FgBrush}"/>
+              </StackPanel>
+              <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                 <TextBlock Text="来源: " Foreground="{StaticResource SubFgBrush}"/>
                 <TextBlock x:Name="StatusSource" Foreground="{StaticResource FgBrush}"/>
               </StackPanel>
@@ -354,6 +396,7 @@
                             <TextBlock x:Name="UrlCover"  Margin="0,0,0,4" Foreground="#4fc3f7" Cursor="Hand" MouseLeftButtonUp="OpenUrl"/>
                             <TextBlock x:Name="UrlTitle"  Margin="0,0,0,4" Foreground="#4fc3f7" Cursor="Hand" MouseLeftButtonUp="OpenUrl"/>
                             <TextBlock x:Name="UrlArtist" Margin="0,0,0,4" Foreground="#4fc3f7" Cursor="Hand" MouseLeftButtonUp="OpenUrl"/>
+                            <TextBlock x:Name="UrlAlbum"  Margin="0,0,0,4" Foreground="#4fc3f7" Cursor="Hand" MouseLeftButtonUp="OpenUrl"/>
                             <TextBlock x:Name="UrlApi"    Foreground="#4fc3f7" Cursor="Hand" MouseLeftButtonUp="OpenUrl"/>
                         </StackPanel>
           </Border>

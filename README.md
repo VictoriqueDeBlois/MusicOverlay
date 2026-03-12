@@ -32,6 +32,7 @@ dotnet run --project MusicOverlay
 | `http://localhost:49090/cover`  | 仅封面 |
 | `http://localhost:49090/title`  | 仅标题 |
 | `http://localhost:49090/artist` | 仅艺术家 |
+| `http://localhost:49090/album`  | 仅专辑 |
 | `http://localhost:49090/api/now` | JSON 数据（调试用） |
 
 ## 项目架构
@@ -77,6 +78,8 @@ web/
   "preferred_app": "spotify.exe",
   "smtc_title_regex": "",
   "smtc_artist_regex": "",
+  "smtc_album_regex": "",
+  "title_regex": "",
   "poll_interval_ms": 1000
 }
 ```
@@ -89,15 +92,18 @@ web/
   - Microsoft Store 应用填 AUMID 子串，如 `applemusic`（Apple Music 完整 AUMID 为 `AppleInc.AppleMusicWin_nzyj5cx40ttqa!App`）
   - 匹配逻辑为 `Contains`，大小写不敏感
 
-- `smtc_title_regex`：对 SMTC 返回的**标题字段**应用正则，可提取 `(?<title>...)` 和/或 `(?<artist>...)`，留空不处理
-- `smtc_artist_regex`：对 SMTC 返回的**艺术家字段**应用正则，可提取 `(?<artist>...)` 和/或 `(?<title>...)`，留空不处理
+- `smtc_title_regex`：对 SMTC 返回的**标题字段**应用正则，可提取 `(?<title>...)` / `(?<artist>...)` / `(?<album>...)`，留空不处理
+- `smtc_artist_regex`：对 SMTC 返回的**艺术家字段**应用正则，可提取 `(?<artist>...)` / `(?<title>...)` / `(?<album>...)`，留空不处理
+- `smtc_album_regex`：对 SMTC 返回的**专辑字段**应用正则，可提取 `(?<album>...)` / `(?<title>...)` / `(?<artist>...)`，留空不处理
+- `title_regex`：可选，从 **SMTC 对应进程** 的窗口标题提取 `title/artist/album`（进程名使用 `preferred_app`）
 
 **正则合并优先级：**
 
 | 最终字段 | 优先级顺序 |
 |---------|-----------|
-| title  | `smtc_title_regex[title]` → `smtc_artist_regex[title]` → 原始 title |
-| artist | `smtc_artist_regex[artist]` → `smtc_title_regex[artist]` → 原始 artist |
+| title  | `smtc_title_regex[title]` → `smtc_artist_regex[title]` → `smtc_album_regex[title]` → `title_regex[title]` → 原始 title |
+| artist | `smtc_artist_regex[artist]` → `smtc_title_regex[artist]` → `smtc_album_regex[artist]` → `title_regex[artist]` → 原始 artist |
+| album  | `smtc_album_regex[album]` → `smtc_title_regex[album]` → `smtc_artist_regex[album]` → `title_regex[album]` → 原始 album |
 
 **使用场景举例：**
 
@@ -126,8 +132,9 @@ smtc_title_regex: ^(?<artist>.+?) - (?<title>.+)$
 
 **字段说明：**
 
-- `title_regex`：从窗口标题提取信息，必须包含命名组 `(?<title>...)` 和 `(?<artist>...)`
+- `title_regex`：从窗口标题提取信息，支持命名组 `(?<title>...)` / `(?<artist>...)` / `(?<album>...)`
 - `webdb_path`：网易云 `webdb.dat` 路径（SQLite），读取播放历史中的封面 URL 并下载
+- `process_name`：网易云进程名（用于读取窗口标题）
 
 ---
 

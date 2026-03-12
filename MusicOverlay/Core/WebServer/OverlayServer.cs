@@ -15,6 +15,7 @@ namespace MusicOverlay.Core.WebServer;
 ///   GET /cover        → web/cover.html      (cover only)
 ///   GET /title        → web/title.html      (title only)
 ///   GET /artist       → web/artist.html     (artist only)
+///   GET /album        → web/album.html      (album only)
 ///   GET /api/now      → JSON of current MediaInfo
 ///   GET /api/theme    → JSON of current ThemeConfig
 ///   GET /static/*     → static files from web/ (js, css, images)
@@ -135,6 +136,7 @@ public class OverlayServer : IDisposable
                 "/cover"               => "cover.html",
                 "/title"               => "title.html",
                 "/artist"              => "artist.html",
+                "/album"               => "album.html",
                 _                      => null
             };
 

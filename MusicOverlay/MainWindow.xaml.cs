@@ -41,6 +41,7 @@ public partial class MainWindow : Window
         UrlCover.Text  = $"http://localhost:{port}/cover     (仅封面)";
         UrlTitle.Text  = $"http://localhost:{port}/title     (仅标题)";
         UrlArtist.Text = $"http://localhost:{port}/artist    (仅艺术家)";
+        UrlAlbum.Text  = $"http://localhost:{port}/album     (仅专辑)";
         UrlApi.Text    = $"http://localhost:{port}/api/now   (JSON 数据)";
 
         // Store the bare URL in Tag for click-to-open
@@ -48,6 +49,7 @@ public partial class MainWindow : Window
         UrlCover.Tag  = $"http://localhost:{port}/cover";
         UrlTitle.Tag  = $"http://localhost:{port}/title";
         UrlArtist.Tag = $"http://localhost:{port}/artist";
+        UrlAlbum.Tag  = $"http://localhost:{port}/album";
         UrlApi.Tag    = $"http://localhost:{port}/api/now";
     }
 
@@ -60,6 +62,7 @@ public partial class MainWindow : Window
     {
         StatusTitle.Text  = info.Title  is { Length: > 0 } t ? t : "(无)";
         StatusArtist.Text = info.Artist is { Length: > 0 } a ? a : "(无)";
+        StatusAlbum.Text  = info.Album  is { Length: > 0 } al ? al : "(无)";
         StatusSource.Text = info.SourceId is { Length: > 0 } s ? s : "(无)";
         StatusCover.Text  = info.CoverBase64.Length > 0 ? $"已获取 ({info.CoverBase64.Length / 1024} KB)" : "无封面";
     }
@@ -167,6 +170,7 @@ public partial class MainWindow : Window
         EditorPreferredApp.Text     = cfg.PreferredApp;
         EditorSmtcTitleRegex.Text   = cfg.SmtcTitleRegex;
         EditorSmtcArtistRegex.Text  = cfg.SmtcArtistRegex;
+        EditorSmtcAlbumRegex.Text   = cfg.SmtcAlbumRegex;
         EditorProcessName.Text      = cfg.ProcessName;
         EditorTitleRegex.Text       = cfg.TitleRegex;
         EditorWebDbPath.Text        = cfg.WebDbPath;
@@ -183,26 +187,24 @@ public partial class MainWindow : Window
 
     private void ApplyEditorTypeVisibility(string type)
     {
-        bool isCapture = type == "netease_webdb" || type == "window_capture";
-        var smtcVis    = isCapture ? Visibility.Collapsed : Visibility.Visible;
-        var captureVis = isCapture ? Visibility.Visible   : Visibility.Collapsed;
+        bool isNetease = type == "netease_webdb" || type == "window_capture";
+        var smtcVis    = isNetease ? Visibility.Collapsed : Visibility.Visible;
+        var neteaseVis = isNetease ? Visibility.Visible   : Visibility.Collapsed;
 
         // SMTC-only fields
         LblPreferredApp.Visibility    = smtcVis; PanelPreferredApp.Visibility    = smtcVis;
         LblSmtcTitleRegex.Visibility  = smtcVis; PanelSmtcTitleRegex.Visibility  = smtcVis;
         LblSmtcArtistRegex.Visibility = smtcVis; PanelSmtcArtistRegex.Visibility = smtcVis;
+        LblSmtcAlbumRegex.Visibility  = smtcVis; PanelSmtcAlbumRegex.Visibility  = smtcVis;
 
-        // WindowCapture-only fields
-        LblProcessName.Visibility = captureVis; EditorProcessName.Visibility = captureVis;
-        LblTitleRegex.Visibility  = captureVis; PanelTitleRegex.Visibility   = captureVis;
-        if (!isCapture)
-        {
-            LblWebDbPath.Visibility = Visibility.Collapsed; EditorWebDbPath.Visibility = Visibility.Collapsed;
-        }
-        else
-        {
-            LblWebDbPath.Visibility = Visibility.Visible; EditorWebDbPath.Visibility = Visibility.Visible;
-        }
+        // Window title regex fields
+        // SMTC uses preferred_app as process name, so hide process_name for SMTC.
+        LblProcessName.Visibility = neteaseVis; EditorProcessName.Visibility = neteaseVis;
+        LblTitleRegex.Visibility  = Visibility.Visible; PanelTitleRegex.Visibility = Visibility.Visible;
+
+        // NetEase-only fields
+        LblWebDbPath.Visibility = neteaseVis;
+        EditorWebDbPath.Visibility = neteaseVis;
     }
 
     private void EditorType_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
@@ -220,6 +222,7 @@ public partial class MainWindow : Window
         cfg.PreferredApp     = EditorPreferredApp.Text.Trim();
         cfg.SmtcTitleRegex   = EditorSmtcTitleRegex.Text.Trim();
         cfg.SmtcArtistRegex  = EditorSmtcArtistRegex.Text.Trim();
+        cfg.SmtcAlbumRegex   = EditorSmtcAlbumRegex.Text.Trim();
         cfg.ProcessName      = EditorProcessName.Text.Trim();
         cfg.TitleRegex       = EditorTitleRegex.Text.Trim();
         cfg.WebDbPath        = EditorWebDbPath.Text.Trim();
@@ -227,6 +230,9 @@ public partial class MainWindow : Window
 
         if (EditorType.SelectedItem is System.Windows.Controls.ComboBoxItem typeItem)
             cfg.Type = typeItem.Tag as string ?? "smtc";
+
+        if (cfg.Type == "smtc")
+            cfg.ProcessName = string.Empty;
 
         Config.SetSourceConfig(_editingSourceId, cfg);
         Config.SaveSources();
@@ -342,6 +348,13 @@ public partial class MainWindow : Window
         ArtistMarquee.IsChecked = t.Artist.Marquee;
         ArtistBold.IsChecked    = t.Artist.Bold;
 
+        AlbumFont.Text    = t.Album.Font;
+        AlbumSize.Text    = t.Album.Size.ToString();
+        AlbumColor.Text   = t.Album.Color;
+        AlbumShadow.IsChecked  = t.Album.Shadow;
+        AlbumMarquee.IsChecked = t.Album.Marquee;
+        AlbumBold.IsChecked    = t.Album.Bold;
+
         foreach (System.Windows.Controls.ComboBoxItem item in BgType.Items)
             if (item.Tag as string == t.Background.Type) { BgType.SelectedItem = item; break; }
         BgColor.Text = t.Background.Color;
@@ -384,6 +397,13 @@ public partial class MainWindow : Window
                 ArtistMarquee.IsChecked = false;
                 ArtistBold.IsChecked = false;
 
+                AlbumFont.Text = "Microsoft YaHei";
+                AlbumSize.Text = "16";
+                AlbumColor.Text = "#aaaaaa";
+                AlbumShadow.IsChecked = true;
+                AlbumMarquee.IsChecked = false;
+                AlbumBold.IsChecked = false;
+
                 SelectComboItem(BgType, "transparent");
                 BgColor.Text = "#00000080";
                 break;
@@ -409,6 +429,13 @@ public partial class MainWindow : Window
                 ArtistMarquee.IsChecked = false;
                 ArtistBold.IsChecked = false;
 
+                AlbumFont.Text = "Microsoft YaHei";
+                AlbumSize.Text = "14";
+                AlbumColor.Text = "#cccccc";
+                AlbumShadow.IsChecked = false;
+                AlbumMarquee.IsChecked = false;
+                AlbumBold.IsChecked = false;
+
                 SelectComboItem(BgType, "transparent");
                 BgColor.Text = "#00000000";
                 break;
@@ -433,6 +460,13 @@ public partial class MainWindow : Window
                 ArtistShadow.IsChecked = true;
                 ArtistMarquee.IsChecked = false;
                 ArtistBold.IsChecked = false;
+
+                AlbumFont.Text = "Microsoft YaHei";
+                AlbumSize.Text = "16";
+                AlbumColor.Text = "#e0e0e0";
+                AlbumShadow.IsChecked = true;
+                AlbumMarquee.IsChecked = false;
+                AlbumBold.IsChecked = false;
 
                 SelectComboItem(BgType, "blur_cover");
                 BgColor.Text = "#00000088";
@@ -483,6 +517,13 @@ public partial class MainWindow : Window
         t.Artist.Marquee = ArtistMarquee.IsChecked == true;
         t.Artist.Bold    = ArtistBold.IsChecked    == true;
         if (int.TryParse(ArtistSize.Text, out var aSize)) t.Artist.Size = aSize;
+
+        t.Album.Font    = AlbumFont.Text.Trim();
+        t.Album.Color   = AlbumColor.Text.Trim();
+        t.Album.Shadow  = AlbumShadow.IsChecked  == true;
+        t.Album.Marquee = AlbumMarquee.IsChecked == true;
+        t.Album.Bold    = AlbumBold.IsChecked    == true;
+        if (int.TryParse(AlbumSize.Text, out var albSize)) t.Album.Size = albSize;
 
         if (BgType.SelectedItem is System.Windows.Controls.ComboBoxItem bgItem)
             t.Background.Type = bgItem.Tag as string ?? "transparent";
