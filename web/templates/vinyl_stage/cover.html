@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vinyl Cover</title>
+  <link rel="stylesheet" href="main.css">
+  <link rel="stylesheet" href="/custom/user.css" onerror="this.remove()">
+  <script src="/overlay.js"></script>
+  <style>
+    .song-wrap { padding-top: 0; height: 100%; display: flex; align-items: center; justify-content: center; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="song-wrap">
+      <div class="song-disc">
+        <div class="song-rotor" id="rotor">
+          <div class="song-disc__bg"></div>
+          <div class="song-disc__cover">
+            <div class="song-img">
+              <img src="images/default-cover.png" alt="cover" class="u-img" id="cover-img">
+            </div>
+          </div>
+        </div>
+        <div class="song-spindle"></div>
+        <div class="song-needle-group">
+          <div class="song-needle-base"></div>
+          <div class="song-needle" id="needle"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="main.js"></script>
+</body>
+</html>

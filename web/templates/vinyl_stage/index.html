@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vinyl Stage</title>
+  <link rel="stylesheet" href="main.css">
+  <link rel="stylesheet" href="/custom/user.css" onerror="this.remove()">
+  <script src="/overlay.js"></script>
+</head>
+<body>
+  <div id="app">
+    <div class="song-wrap">
+      <div class="song-disc">
+        <div class="song-rotor" id="rotor">
+          <div class="song-disc__bg"></div>
+          <div class="song-disc__cover">
+            <div class="song-img">
+              <img src="" alt="cover" class="u-img" id="cover-img">
+            </div>
+          </div>
+        </div>
+        <div class="song-spindle-shadow"></div>
+        <div class="song-spindle"></div>
+        <div class="song-needle-group">
+          <div class="song-needle-base"></div>
+          <div class="song-needle" id="needle"></div>
+        </div>
+        <div class="play-btn" id="play-btn"></div>
+      </div>
+    </div>
+  </div>
+  <script src="main.js"></script>
+</body>
+</html>

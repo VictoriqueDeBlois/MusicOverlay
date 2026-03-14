@@ -6,7 +6,7 @@
  */
 
 (function () {
-  const WS_PORT = location.port || 9090;
+  const WS_PORT = location.port || 49090;
   const WS_URL  = `ws://localhost:${WS_PORT}/ws`;
   const RECONNECT_DELAY = 3000;
 
@@ -71,6 +71,13 @@
       r.setProperty('--artist-color',  theme.artist.color);
       r.setProperty('--artist-shadow', theme.artist.shadow ? '0 2px 8px rgba(0,0,0,0.8)' : 'none');
       r.setProperty('--artist-weight', theme.artist.bold ? 'bold' : 'normal');
+    }
+    if (theme.album) {
+      r.setProperty('--album-font',   `"${theme.album.font}", sans-serif`);
+      r.setProperty('--album-size',   theme.album.size + 'px');
+      r.setProperty('--album-color',  theme.album.color);
+      r.setProperty('--album-shadow', theme.album.shadow ? '0 2px 8px rgba(0,0,0,0.8)' : 'none');
+      r.setProperty('--album-weight', theme.album.bold ? 'bold' : 'normal');
     }
     if (theme.background) {
       if (theme.background.type === 'color') {

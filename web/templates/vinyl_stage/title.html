@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vinyl Title</title>
+  <link rel="stylesheet" href="/custom/user.css" onerror="this.remove()">
+  <script src="/overlay.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: transparent; overflow: hidden; }
+    .wrap { height: 100%; display: flex; align-items: center; justify-content: center; padding: 16px 24px; }
+    .line { overflow: hidden; white-space: nowrap; max-width: 100%; }
+    #title-text {
+      font-family: "Bahnschrift", sans-serif;
+      font-size: 36px;
+      color: #f6f2e8;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.7);
+      font-weight: bold;
+      letter-spacing: 0.5px;
+      display: inline-block;
+    }
+    @keyframes marquee {
+      0% { transform: translateX(0); }
+      20% { transform: translateX(0); }
+      80% { transform: translateX(var(--marquee-offset, -50%)); }
+      100% { transform: translateX(var(--marquee-offset, -50%)); }
+    }
+    .marquee { animation: marquee 8s ease-in-out infinite; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="line"><span id="title-text">等待音乐...</span></div>
+  </div>
+  <script>
+    const titleText = document.getElementById('title-text');
+    initOverlay({
+      onMedia(data) {
+        titleText.textContent = data.title || '';
+        requestAnimationFrame(() => {
+          setupMarquee(titleText);
+          const tw = titleText.scrollWidth - titleText.parentElement.clientWidth;
+          titleText.style.setProperty('--marquee-offset', `-${tw}px`);
+        });
+      }
+    });
+  </script>
+</body>
+</html>
