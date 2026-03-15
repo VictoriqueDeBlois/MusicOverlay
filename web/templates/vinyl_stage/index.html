@@ -12,11 +12,23 @@
   <div id="app">
     <div class="song-wrap">
       <div class="song-disc">
-        <div class="song-rotor" id="rotor">
-          <div class="song-disc__bg"></div>
-          <div class="song-disc__cover">
-            <div class="song-img">
-              <img src="" alt="cover" class="u-img" id="cover-img">
+        <div class="song-rotor song-rotor--current" id="rotor-current">
+          <div class="song-rotor-spin">
+            <div class="song-disc__bg"></div>
+            <div class="song-disc__cover">
+              <div class="song-img">
+                <img src="" alt="cover" class="u-img" id="cover-img">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="song-rotor song-rotor--next" id="rotor-next">
+          <div class="song-rotor-spin">
+            <div class="song-disc__bg"></div>
+            <div class="song-disc__cover">
+              <div class="song-img">
+                <img src="" alt="cover" class="u-img" id="cover-img-next">
+              </div>
             </div>
           </div>
         </div>
@@ -26,7 +38,6 @@
           <div class="song-needle-base"></div>
           <div class="song-needle" id="needle"></div>
         </div>
-        <div class="play-btn" id="play-btn"></div>
       </div>
     </div>
   </div>
