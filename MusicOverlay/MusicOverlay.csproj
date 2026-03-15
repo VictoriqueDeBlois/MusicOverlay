@@ -30,4 +30,7 @@
       <Link>config\%(RecursiveDir)%(Filename)%(Extension)</Link>
     </Content>
   </ItemGroup>
+  <ItemGroup>
+    <Content Remove="..\web\templates\vinyl_stage\.idea\**" />
+  </ItemGroup>
 </Project>

@@ -26,7 +26,7 @@
       80% { transform: translateX(var(--marquee-offset, -50%)); }
       100% { transform: translateX(var(--marquee-offset, -50%)); }
     }
-    .marquee { animation: marquee 8s ease-in-out infinite; }
+    .marquee { animation: marquee 8s ease-in-out infinite alternate; }
   </style>
 </head>
 <body>
@@ -35,16 +35,33 @@
   </div>
   <script>
     const artistText = document.getElementById('artist-text');
+
+    function updateMarquee() {
+      if (!artistText) return;
+      const parent = artistText.parentElement;
+      if (!parent) return;
+      const overflow = artistText.scrollWidth - parent.clientWidth;
+      if (overflow > 4) {
+        artistText.classList.add('marquee');
+        artistText.style.setProperty('--marquee-offset', `-${overflow}px`);
+      } else {
+        artistText.classList.remove('marquee');
+        artistText.style.setProperty('--marquee-offset', '0px');
+      }
+    }
+
     initOverlay({
       onMedia(data) {
         artistText.textContent = data.artist || '';
-        requestAnimationFrame(() => {
-          setupMarquee(artistText);
-          const aw = artistText.scrollWidth - artistText.parentElement.clientWidth;
-          artistText.style.setProperty('--marquee-offset', `-${aw}px`);
-        });
+        requestAnimationFrame(updateMarquee);
       }
     });
+
+    window.addEventListener('resize', updateMarquee);
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) requestAnimationFrame(updateMarquee);
+    });
+    setInterval(updateMarquee, 1000);
   </script>
 </body>
 </html>
