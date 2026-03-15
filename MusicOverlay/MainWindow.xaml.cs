@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Input;
 using MusicOverlay.Config;
@@ -175,6 +176,7 @@ public partial class MainWindow : Window
         EditorTitleRegex.Text       = cfg.TitleRegex;
         EditorWebDbPath.Text        = cfg.WebDbPath;
         EditorPollInterval.Text     = cfg.PollIntervalMs.ToString();
+        EditorLyricProcessName.Text = cfg.LyricProcessName;
 
         // Type selector
         var editorType = cfg.Type == "window_capture" ? "netease_webdb" : cfg.Type;
@@ -227,6 +229,7 @@ public partial class MainWindow : Window
         cfg.TitleRegex       = EditorTitleRegex.Text.Trim();
         cfg.WebDbPath        = EditorWebDbPath.Text.Trim();
         if (int.TryParse(EditorPollInterval.Text, out var ms)) cfg.PollIntervalMs = ms;
+        cfg.LyricProcessName = EditorLyricProcessName.Text.Trim();
 
         if (EditorType.SelectedItem is System.Windows.Controls.ComboBoxItem typeItem)
             cfg.Type = typeItem.Tag as string ?? "smtc";
@@ -278,6 +281,127 @@ public partial class MainWindow : Window
             System.Windows.MessageBox.Show($"已切换到：{item.Content}", "已应用", MessageBoxButton.OK, MessageBoxImage.Information);
         }
     }
+
+    // ── Lyric OBS support ────────────────────────────────────────────────────
+
+    private void LyricObsSupport_Click(object sender, RoutedEventArgs e)
+    {
+        var sourceId = (SourceSelector.SelectedItem as System.Windows.Controls.ComboBoxItem)?.Tag as string
+                       ?? Config.App.ActiveSource;
+        var cfg = Config.GetSourceConfig(sourceId);
+
+        var mainProcess = GetConfigMainProcessName(cfg);
+        var lyricProcess = cfg.LyricProcessName;
+        if (string.IsNullOrWhiteSpace(lyricProcess))
+            lyricProcess = mainProcess;
+
+        var targets = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (!string.IsNullOrWhiteSpace(mainProcess))
+            targets.Add(mainProcess);
+        if (!string.IsNullOrWhiteSpace(lyricProcess))
+            targets.Add(lyricProcess);
+
+        if (targets.Count == 0)
+        {
+            System.Windows.MessageBox.Show("请填写进程名后再尝试。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var changed = 0;
+        foreach (var processName in targets)
+            changed += RemoveToolWindowStyle(processName);
+
+        System.Windows.MessageBox.Show($"处理完成：已更新 {changed} 个窗口。", "完成",
+            MessageBoxButton.OK, MessageBoxImage.Information);
+    }
+
+    private static string GetConfigMainProcessName(SourceConfig cfg)
+    {
+        var preferred = cfg.PreferredApp?.Trim() ?? "";
+        var process = cfg.ProcessName?.Trim() ?? "";
+        if (cfg.Type == "smtc")
+            return preferred;
+        return !string.IsNullOrWhiteSpace(process) ? process : preferred;
+    }
+
+    private static int RemoveToolWindowStyle(string processName)
+    {
+        var normalized = NormalizeProcessName(processName);
+        if (string.IsNullOrWhiteSpace(normalized))
+            return 0;
+
+        var count = 0;
+        foreach (var hwnd in FindWindowHandlesForProcess(normalized))
+        {
+            var exStyle = GetWindowLong(hwnd, GwlExStyle);
+            if ((exStyle & WsExToolWindow) != 0)
+            {
+                SetWindowLong(hwnd, GwlExStyle, exStyle & ~WsExToolWindow);
+                SetWindowPos(hwnd, IntPtr.Zero, 0, 0, 0, 0,
+                    SwpNoMove | SwpNoSize | SwpNoZOrder | SwpFrameChanged);
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private static string NormalizeProcessName(string name)
+    {
+        var trimmed = (name ?? string.Empty).Trim();
+        if (trimmed.Length == 0) return "";
+        return trimmed.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) ? trimmed : trimmed + ".exe";
+    }
+
+    private static List<IntPtr> FindWindowHandlesForProcess(string processName)
+    {
+        var handles = new List<IntPtr>();
+        EnumWindows((hwnd, _) =>
+        {
+            if (!IsWindowVisible(hwnd)) return true;
+            GetWindowThreadProcessId(hwnd, out var pid);
+            try
+            {
+                var proc = Process.GetProcessById((int)pid);
+                var procName = proc.ProcessName + ".exe";
+                if (string.Equals(procName, processName, StringComparison.OrdinalIgnoreCase))
+                    handles.Add(hwnd);
+            }
+            catch
+            {
+                // ignore processes that exit or can't be queried
+            }
+            return true;
+        }, IntPtr.Zero);
+        return handles;
+    }
+
+    private const int GwlExStyle = -20;
+    private const int WsExToolWindow = 0x00000080;
+    private const uint SwpNoMove = 0x0002;
+    private const uint SwpNoSize = 0x0001;
+    private const uint SwpNoZOrder = 0x0004;
+    private const uint SwpFrameChanged = 0x0020;
+
+    private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    private static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    private static extern bool IsWindowVisible(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter,
+        int x, int y, int cx, int cy, uint uFlags);
 
     // ── Theme tab ────────────────────────────────────────────────────────────
 

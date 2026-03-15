@@ -85,6 +85,12 @@ public class SourceConfig
 
     [JsonProperty("poll_interval_ms")]
     public int PollIntervalMs { get; set; } = 1000;
+
+    /// <summary>
+    /// Optional process name for the lyric window (used by OBS support helper).
+    /// </summary>
+    [JsonProperty("lyric_process_name")]
+    public string LyricProcessName { get; set; } = "";
 }
 
 public class ThemeConfig
