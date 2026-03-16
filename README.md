@@ -1,6 +1,6 @@
 # Music Overlay
 
-将正在播放的音乐信息（封面、标题、艺术家）实时推送到 OBS 浏览器源。
+将正在播放的音乐信息（封面、标题、艺术家、专辑）实时推送到 OBS 浏览器源。
 
 ## 环境要求
 
@@ -24,6 +24,7 @@ dotnet run --project MusicOverlay
 2. 在"状态"标签页看到服务地址，复制到 OBS 浏览器源。
 3. 在"音乐源"标签页选择/配置音乐来源，点击"应用"切换。
 4. 在"外观"标签页调整样式，点击"保存此主题"即时生效。
+5. 若桌面歌词无法被 OBS 捕获，可在“音乐源”中点击“歌词OBS支持”按钮处理窗口样式。
 
 ## OBS 浏览器源地址
 
@@ -58,7 +59,8 @@ config/
 
 web/
 └── templates/
-    └── default/    # 默认前端模板（可自定义）
+    ├── default/    # 默认前端模板（可自定义）
+    └── vinyl_stage/ # 黑胶舞台风格模板
 ```
 
 ## 配置文件
@@ -80,6 +82,7 @@ web/
   "smtc_artist_regex": "",
   "smtc_album_regex": "",
   "title_regex": "",
+  "lyric_process_name": "",
   "poll_interval_ms": 1000
 }
 ```
@@ -96,6 +99,7 @@ web/
 - `smtc_artist_regex`：对 SMTC 返回的**艺术家字段**应用正则，可提取 `(?<artist>...)` / `(?<title>...)` / `(?<album>...)`，留空不处理
 - `smtc_album_regex`：对 SMTC 返回的**专辑字段**应用正则，可提取 `(?<album>...)` / `(?<title>...)` / `(?<artist>...)`，留空不处理
 - `title_regex`：可选，从 **SMTC 对应进程** 的窗口标题提取 `title/artist/album`（进程名使用 `preferred_app`）
+- `lyric_process_name`：桌面歌词进程名（用于“歌词OBS支持”按钮处理窗口样式），留空则默认使用 `preferred_app`
 
 **正则合并优先级：**
 
@@ -126,6 +130,7 @@ smtc_title_regex: ^(?<artist>.+?) - (?<title>.+)$
   "process_name": "cloudmusic.exe",
   "title_regex": "^(?<title>.+?)\\s*[-–]\\s*(?<artist>.+?)\\s*$",
   "webdb_path": "%LocalAppData%\\NetEase\\CloudMusic\\Library\\webdb.dat",
+  "lyric_process_name": "",
   "poll_interval_ms": 1000
 }
 ```
@@ -135,8 +140,19 @@ smtc_title_regex: ^(?<artist>.+?) - (?<title>.+)$
 - `title_regex`：从窗口标题提取信息，支持命名组 `(?<title>...)` / `(?<artist>...)` / `(?<album>...)`
 - `webdb_path`：网易云 `webdb.dat` 路径（SQLite），读取播放历史中的封面 URL 并下载
 - `process_name`：网易云进程名（用于读取窗口标题）
+- `lyric_process_name`：桌面歌词进程名（用于“歌词OBS支持”按钮处理窗口样式），留空则默认使用 `process_name`
 
 ---
+
+## 网易云启用 SMTC（可选）
+
+网易云客户端本身不提供 SMTC，可通过第三方插件启用。推荐使用：
+
+```
+https://github.com/apoint123/inflink-rs
+```
+
+安装并启用后，把音乐源类型改为 **SMTC**，`preferred_app` 填 `cloudmusic.exe` 或插件文档中建议的进程标识即可。
 
 ## 网易云封面配置说明
 
