@@ -7,7 +7,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
-    <!-- <ApplicationIcon>Resources\icon.ico</ApplicationIcon> -->
+    <ApplicationIcon>Resources\icon.ico</ApplicationIcon>
     <AssemblyName>MusicOverlay</AssemblyName>
     <RootNamespace>MusicOverlay</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -17,6 +17,10 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\icon.ico" />
   </ItemGroup>
 
   <!-- Copy web folder and config to output -->

@@ -95,10 +95,18 @@ public partial class App : Application
 
     private static System.Drawing.Icon LoadIcon()
     {
-        // Try to load a custom icon; fall back to a system icon
-        var iconPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "icon.ico");
-        if (File.Exists(iconPath))
-            return new System.Drawing.Icon(iconPath);
+        // Try to load a custom icon from WPF resources; fall back to a system icon
+        try
+        {
+            var uri = new Uri("pack://application:,,,/Resources/icon.ico", UriKind.Absolute);
+            var resource = Application.GetResourceStream(uri);
+            if (resource != null)
+                return new System.Drawing.Icon(resource.Stream);
+        }
+        catch
+        {
+            // ignore and fall back
+        }
         return SystemIcons.Application;
     }
 
